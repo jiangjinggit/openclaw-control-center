@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Models 管理 - OpenClaw 控制中心</title>
+  <style>
+    body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;background:#f5f7fb;margin:0;color:#111827}.wrap{max-width:1180px;margin:0 auto;padding:24px}.top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:20px}.btn{border:1px solid #dbe1ea;background:#fff;border-radius:10px;padding:9px 14px;text-decoration:none;color:#334155}.panel{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:20px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:16px}.stat{background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:14px}.label{font-size:12px;color:#64748b;display:block;margin-bottom:8px}.value{font-size:24px;font-weight:700}.toolbar{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:16px}.search{flex:1;min-width:240px;border:1px solid #dbe1ea;border-radius:10px;padding:10px 12px;font-size:14px}.tabs{display:flex;gap:8px;flex-wrap:wrap}.tab{border:1px solid #dbe1ea;background:#fff;border-radius:999px;padding:8px 12px;cursor:pointer;color:#475569}.tab.active{background:#111827;color:#fff;border-color:#111827}
+    .list{display:flex;flex-direction:column;gap:12px}.card{border:1px solid #e2e8f0;border-radius:14px;padding:16px;background:#fff}.meta{font-size:12px;color:#64748b;margin-top:6px;word-break:break-all}.tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.tag,.pill{padding:4px 10px;border-radius:999px;font-size:12px;font-weight:600;display:inline-flex;align-items:center}.tag{background:#eff6ff;color:#1d4ed8}.ok{background:#dcfce7;color:#166534}.warn{background:#fef3c7;color:#92400e}.empty{color:#94a3b8;padding:20px 0}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <h1>Models / Providers 管理</h1>
+        <div class="meta">补充 provider 健康状态、reasoning 模型数和配置缺口提示，避免只看到列表却无法判断是否可用。</div>
+      </div>
+      <a class="btn" href="/">返回首页</a>
+    </div>
+    <div class="stats" id="stats"></div>
+    <div class="panel">
+      <div class="toolbar">
+        <input id="search" class="search" placeholder="搜索 provider、协议或模型">
+        <div class="tabs" id="tabs"></div>
+      </div>
+      <div class="list" id="list">加载中...</div>
+    </div>
+  </div>
+  <script>
+    let items=[]; let activeTab='all';
+    const tabs=[['all','全部'],['ok','正常'],['warn','待修复'],['reasoning','Reasoning']];
+    const fmt=n=>Number(n||0).toLocaleString('zh-CN');
+    function renderStats(){
+      const providers=items.length, models=items.reduce((a,b)=>a+Number(b.modelCount||0),0), reasoning=items.reduce((a,b)=>a+Number(b.reasoningCount||0),0), warn=items.filter(i=>i.issues?.length).length;
+      document.getElementById('stats').innerHTML=[['Provider 数',providers],['模型总数',models],['Reasoning 模型',reasoning],['待修复 Provider',warn]].map(([l,v])=>`<div class="stat"><span class="label">${l}</span><div class="value">${fmt(v)}</div></div>`).join('');
+    }
+    function renderTabs(){ document.getElementById('tabs').innerHTML=tabs.map(([k,l])=>`<button class="tab ${activeTab===k?'active':''}" data-tab="${k}">${l}</button>`).join(''); document.querySelectorAll('[data-tab]').forEach(el=>el.onclick=()=>{activeTab=el.dataset.tab; render();}); }
+    function getFiltered(){ const q=document.getElementById('search').value.trim().toLowerCase(); return items.filter(i=>{ const tabHit=activeTab==='all'||(activeTab==='ok'&&!i.issues?.length)||(activeTab==='warn'&&i.issues?.length)||(activeTab==='reasoning'&&i.reasoningCount>0); const text=[i.provider,i.api,i.baseUrl,(i.models||[]).map(m=>m.name).join(' ')].join(' ').toLowerCase(); return tabHit&&(!q||text.includes(q)); }); }
+    function render(){ renderTabs(); renderStats(); const list=getFiltered(); document.getElementById('list').innerHTML=list.length?list.map(i=>`<div class="card"><div><strong>${i.provider}</strong> <span class="pill ${i.issues?.length?'warn':'ok'}">${i.issues?.length?'待修复':'正常'}</span></div><div class="meta">协议：${i.api} · 模型数：${fmt(i.modelCount)} · Reasoning：${fmt(i.reasoningCount)}</div><div class="meta">Base URL：${i.baseUrl||'未设置'}</div>${i.issues?.length?`<div class="meta" style="color:#92400e">风险：${i.issues.join('；')}</div>`:''}<div class="tags">${(i.models||[]).map(m=>`<span class="tag">${m.name}${m.reasoning?' · reasoning':''}</span>`).join('')||'<span class="tag">暂无模型</span>'}</div></div>`).join(''):'<div class="empty">当前筛选条件下没有 provider</div>'; }
+    fetch('/api/models-summary').then(r=>r.json()).then(data=>{items=data; render();});
+    document.getElementById('search').addEventListener('input',render);
+  </script>
+</body>
+</html>

@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>代理设置 - OpenClaw 控制中心</title>
+  <style>
+    body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;background:#f5f7fb;margin:0;color:#111827}
+    .wrap{max-width:900px;margin:0 auto;padding:24px}
+    .top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+    .btn{border:1px solid #dbe1ea;background:#fff;border-radius:10px;padding:9px 14px;text-decoration:none;color:#334155;cursor:pointer}
+    .btn.primary{background:#3b82f6;color:#fff;border-color:#3b82f6}
+    .btn.primary:hover{background:#2563eb}
+    .btn:disabled{background:#e5e7eb;color:#94a3b8;cursor:not-allowed}
+    .panel{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:24px;margin-bottom:16px}
+    .section-title{font-size:18px;font-weight:700;margin-bottom:16px}
+    .form-group{margin-bottom:20px}
+    .label{font-size:14px;font-weight:600;color:#374151;margin-bottom:8px;display:block}
+    .hint{font-size:12px;color:#64748b;margin-top:4px}
+    .input{width:100%;padding:10px 12px;border:1px solid #dbe1ea;border-radius:10px;font-size:14px;font-family:inherit}
+    .textarea{width:100%;min-height:80px;padding:10px 12px;border:1px solid #dbe1ea;border-radius:10px;font-size:14px;font-family:inherit;resize:vertical}
+    .checkbox-group{display:flex;align-items:center;gap:8px}
+    .checkbox{width:18px;height:18px;cursor:pointer}
+    .example{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;margin-top:8px}
+    .example-title{font-size:12px;font-weight:600;color:#64748b;margin-bottom:6px}
+    .example-code{font-family:'Courier New',monospace;font-size:12px;color:#374151}
+    .alert{padding:12px 16px;border-radius:10px;margin-bottom:16px}
+    .alert.info{background:#dbeafe;border:1px solid #93c5fd;color:#1e40af}
+    .alert.success{background:#dcfce7;border:1px solid #86efac;color:#166534}
+    .alert.warn{background:#fef3c7;border:1px solid #fcd34d;color:#92400e}
+    .button-group{display:flex;gap:12px;margin-top:24px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <h1>代理设置</h1>
+        <div class="hint">配置 OpenClaw Gateway 和渠道的网络代理</div>
+      </div>
+      <a class="btn" href="/">返回首页</a>
+    </div>
+
+    <div id="alertContainer"></div>
+
+    <div class="panel">
+      <div class="section-title">基础代理配置</div>
+      
+      <div class="form-group">
+        <label class="label" for="proxyServer">代理服务器</label>
+        <input type="text" id="proxyServer" class="input" placeholder="http://127.0.0.1:7890">
+        <div class="hint">所有请求的默认代理。支持 http://、https://、socks5:// 协议</div>
+        <div class="example">
+          <div class="example-title">示例：</div>
+          <div class="example-code">http://127.0.0.1:7890</div>
+          <div class="example-code">socks5://127.0.0.1:1080</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="label" for="bypassRules">绕过规则</label>
+        <textarea id="bypassRules" class="textarea" placeholder="localhost;127.0.0.1;*.local"></textarea>
+        <div class="hint">不使用代理的主机列表，用分号、逗号或换行分隔</div>
+        <div class="example">
+          <div class="example-title">示例：</div>
+          <div class="example-code">localhost;127.0.0.1;*.local;*.cn</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <div class="checkbox-group">
+          <input type="checkbox" id="enableProxy" class="checkbox">
+          <label for="enableProxy" class="label" style="margin:0">启用代理</label>
+        </div>
+        <div class="hint">取消勾选将禁用所有代理设置</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="section-title">高级代理配置</div>
+      
+      <div class="alert info">
+        <strong>提示：</strong>以下高级选项为空时，将使用上面的"代理服务器"配置
+      </div>
+
+      <div class="form-group">
+        <label class="label" for="httpProxy">HTTP 代理</label>
+        <input type="text" id="httpProxy" class="input" placeholder="http://127.0.0.1:7890">
+        <div class="hint">仅用于 HTTP 请求的代理（可选）</div>
+      </div>
+
+      <div class="form-group">
+        <label class="label" for="httpsProxy">HTTPS 代理</label>
+        <input type="text" id="httpsProxy" class="input" placeholder="http://127.0.0.1:7890">
+        <div class="hint">仅用于 HTTPS 请求的代理（可选）</div>
+      </div>
+
+      <div class="form-group">
+        <label class="label" for="socksProxy">SOCKS 代理</label>
+        <input type="text" id="socksProxy" class="input" placeholder="socks5://127.0.0.1:1080">
+        <div class="hint">SOCKS5 代理配置（可选）</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="section-title">Telegram 渠道代理</div>
+      
+      <div class="form-group">
+        <div class="checkbox-group">
+          <input type="checkbox" id="syncToTelegram" class="checkbox" checked>
+          <label for="syncToTelegram" class="label" style="margin:0">同步代理到 Telegram 渠道</label>
+        </div>
+        <div class="hint">保存时自动将代理配置同步到 Telegram 渠道配置</div>
+      </div>
+    </div>
+
+    <div class="button-group">
+      <button class="btn primary" id="saveBtn">保存配置</button>
+      <button class="btn" id="testBtn">测试连接</button>
+      <button class="btn" id="resetBtn">重置</button>
+    </div>
+  </div>
+
+  <script>
+    let currentConfig = {};
+
+    function showAlert(type, message) {
+      const container = document.getElementById('alertContainer');
+      container.innerHTML = `<div class="alert ${type}">${message}</div>`;
+      setTimeout(() => { container.innerHTML = ''; }, 5000);
+    }
+
+    async function loadConfig() {
+      try {
+        const response = await fetch('/api/proxy-config');
+        if (response.ok) {
+          currentConfig = await response.json();
+          
+          document.getElementById('proxyServer').value = currentConfig.proxyServer || '';
+          document.getElementById('bypassRules').value = currentConfig.bypassRules || '';
+          document.getElementById('httpProxy').value = currentConfig.httpProxy || '';
+          document.getElementById('httpsProxy').value = currentConfig.httpsProxy || '';
+          document.getElementById('socksProxy').value = currentConfig.socksProxy || '';
+          document.getElementById('enableProxy').checked = currentConfig.enabled !== false;
+          document.getElementById('syncToTelegram').checked = currentConfig.syncToTelegram !== false;
+        }
+      } catch (err) {
+        console.error('加载配置失败', err);
+        showAlert('warn', '加载配置失败，显示默认值');
+      }
+    }
+
+    async function saveConfig() {
+      const btn = document.getElementById('saveBtn');
+      btn.disabled = true;
+      btn.textContent = '保存中...';
+
+      const config = {
+        enabled: document.getElementById('enableProxy').checked,
+        proxyServer: document.getElementById('proxyServer').value.trim(),
+        bypassRules: document.getElementById('bypassRules').value.trim(),
+        httpProxy: document.getElementById('httpProxy').value.trim(),
+        httpsProxy: document.getElementById('httpsProxy').value.trim(),
+        socksProxy: document.getElementById('socksProxy').value.trim(),
+        syncToTelegram: document.getElementById('syncToTelegram').checked
+      };
+
+      try {
+        const response = await fetch('/api/proxy-config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(config)
+        });
+
+        if (response.ok) {
+          showAlert('success', '✅ 配置已保存。Gateway 将在下次重启时应用新配置。');
+          currentConfig = config;
+        } else {
+          const error = await response.json();
+          throw new Error(error.error || '保存失败');
+        }
+      } catch (err) {
+        console.error('保存失败', err);
+        showAlert('warn', `❌ 保存失败：${err.message}`);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '保存配置';
+      }
+    }
+
+    async function testConnection() {
+      const btn = document.getElementById('testBtn');
+      btn.disabled = true;
+      btn.textContent = '测试中...';
+
+      try {
+        const response = await fetch('/api/proxy-test', { method: 'POST' });
+        const result = await response.json();
+
+        if (result.ok) {
+          showAlert('success', `✅ 连接测试成功！延迟：${result.latency}ms`);
+        } else {
+          showAlert('warn', `❌ 连接测试失败：${result.error}`);
+        }
+      } catch (err) {
+        console.error('测试失败', err);
+        showAlert('warn', `❌ 测试失败：${err.message}`);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '测试连接';
+      }
+    }
+
+    function resetConfig() {
+      if (confirm('确定要重置所有代理配置吗？')) {
+        document.getElementById('proxyServer').value = '';
+        document.getElementById('bypassRules').value = '';
+        document.getElementById('httpProxy').value = '';
+        document.getElementById('httpsProxy').value = '';
+        document.getElementById('socksProxy').value = '';
+        document.getElementById('enableProxy').checked = false;
+        document.getElementById('syncToTelegram').checked = true;
+        showAlert('info', '已重置为默认值，点击"保存配置"应用更改');
+      }
+    }
+
+    document.getElementById('saveBtn').onclick = saveConfig;
+    document.getElementById('testBtn').onclick = testConnection;
+    document.getElementById('resetBtn').onclick = resetConfig;
+
+    loadConfig();
+  </script>
+</body>
+</html>

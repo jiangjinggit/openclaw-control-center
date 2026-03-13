@@ -6,253 +6,142 @@
   <title>设置向导 - OpenClaw 控制中心</title>
   <link rel="stylesheet" href="/theme-vars.css">
   <style>
-    body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg-primary);color:var(--text-primary);margin:0;height:100vh;display:flex;align-items:center;justify-content:center}
-    .wizard{max-width:600px;width:100%;background:var(--bg-secondary);border:1px solid var(--border-primary);border-radius:20px;padding:40px;box-shadow:0 10px 25px rgba(0,0,0,0.1)}
-    .wizard-header{text-align:center;margin-bottom:32px}
-    .wizard-title{font-size:28px;font-weight:700;margin:0 0 8px}
-    .wizard-subtitle{color:var(--text-tertiary);font-size:14px}
-    .steps{display:flex;justify-content:center;gap:8px;margin-bottom:32px}
-    .step{width:40px;height:4px;background:var(--border-primary);border-radius:2px;transition:all 0.3s}
-    .step.active{background:var(--accent-primary)}
-    .step.completed{background:var(--success)}
-    .wizard-content{min-height:280px}
-    .step-content{display:none}
-    .step-content.active{display:block}
-    .form-group{margin-bottom:24px}
-    .label{font-size:14px;font-weight:600;color:var(--text-secondary);margin-bottom:8px;display:block}
-    .hint{font-size:12px;color:var(--text-tertiary);margin-top:4px}
-    .input,.select{width:100%;padding:12px;border:1px solid var(--border-primary);border-radius:10px;font-size:14px;font-family:inherit;background:var(--bg-primary);color:var(--text-primary)}
-    .input:focus,.select:focus{outline:none;border-color:var(--accent-primary)}
-    .checkbox-group{display:flex;align-items:flex-start;gap:12px;padding:12px;border:1px solid var(--border-primary);border-radius:10px;cursor:pointer;transition:all 0.2s}
-    .checkbox-group:hover{border-color:var(--accent-primary);background:var(--bg-hover)}
-    .checkbox{width:20px;height:20px;cursor:pointer;flex-shrink:0;margin-top:2px}
-    .checkbox-label{flex:1}
-    .checkbox-title{font-weight:600;margin-bottom:4px}
-    .checkbox-desc{font-size:12px;color:var(--text-tertiary)}
-    .wizard-actions{display:flex;gap:12px;margin-top:32px}
-    .btn{flex:1;padding:12px 24px;border:1px solid var(--border-primary);background:var(--bg-secondary);color:var(--text-primary);border-radius:10px;cursor:pointer;font-weight:600;font-size:14px;transition:all 0.2s}
-    .btn:hover{background:var(--bg-hover)}
-    .btn.primary{background:var(--accent-primary);color:#fff;border-color:var(--accent-primary)}
-    .btn.primary:hover{background:var(--accent-hover)}
-    .btn:disabled{opacity:0.5;cursor:not-allowed}
-    .success-icon{font-size:64px;text-align:center;margin-bottom:24px}
-    .success-message{text-align:center;font-size:18px;font-weight:600;margin-bottom:16px}
-    .success-detail{text-align:center;color:var(--text-tertiary);font-size:14px;margin-bottom:32px}
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 24px;
+    }
+    .wizard {
+      max-width: 600px;
+      width: 100%;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-primary);
+      border-radius: 16px;
+      padding: 40px;
+      text-align: center;
+    }
+    .wizard-icon {
+      font-size: 64px;
+      margin-bottom: 24px;
+    }
+    .wizard-title {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+    .wizard-text {
+      font-size: 16px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      margin-bottom: 32px;
+    }
+    .wizard-steps {
+      text-align: left;
+      margin-bottom: 32px;
+      padding: 24px;
+      background: var(--bg-tertiary);
+      border-radius: 12px;
+    }
+    .step {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .step:last-child {
+      margin-bottom: 0;
+    }
+    .step-number {
+      width: 32px;
+      height: 32px;
+      background: var(--accent-primary);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .step-content {
+      flex: 1;
+    }
+    .step-title {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .step-desc {
+      font-size: 14px;
+      color: var(--text-tertiary);
+    }
+    .btn {
+      padding: 14px 32px;
+      background: var(--accent-primary);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .btn:hover {
+      background: var(--accent-hover);
+    }
+    .btn-secondary {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      margin-left: 12px;
+    }
+    .btn-secondary:hover {
+      background: var(--bg-hover);
+    }
   </style>
   <script src="/theme.js"></script>
 </head>
 <body>
   <div class="wizard">
-    <div class="wizard-header">
-      <h1 class="wizard-title">欢迎使用 OpenClaw 控制中心</h1>
-      <p class="wizard-subtitle">让我们快速完成初始设置</p>
-    </div>
-
-    <div class="steps">
-      <div class="step active" data-step="1"></div>
-      <div class="step" data-step="2"></div>
-      <div class="step" data-step="3"></div>
-      <div class="step" data-step="4"></div>
-    </div>
-
-    <div class="wizard-content">
-      <!-- 步骤 1: 欢迎 -->
-      <div class="step-content active" data-step="1">
-        <h2 style="margin-top:0">👋 欢迎</h2>
-        <p style="color:var(--text-secondary);line-height:1.6">OpenClaw 控制中心是一个外挂式管理工具，帮助你更好地监控和管理 OpenClaw。</p>
-        <p style="color:var(--text-secondary);line-height:1.6">在开始之前，请确保你已经安装了 OpenClaw。</p>
-        <div style="background:var(--info-bg);border:1px solid var(--info-border);border-radius:10px;padding:16px;margin-top:24px">
-          <strong style="color:var(--info)">提示：</strong>
-          <p style="margin:8px 0 0;color:var(--text-secondary);font-size:14px">如果你还没有安装 OpenClaw，请访问 <a href="https://github.com/openclaw/openclaw" target="_blank" style="color:var(--accent-primary)">OpenClaw GitHub</a> 获取安装指南。</p>
+    <div class="wizard-icon">🚀</div>
+    <h1 class="wizard-title">欢迎使用 OpenClaw 控制中心</h1>
+    <p class="wizard-text">
+      这是一个外挂式的 OpenClaw 管理和监控工具，帮助你更好地管理你的 OpenClaw 实例。
+    </p>
+    
+    <div class="wizard-steps">
+      <div class="step">
+        <div class="step-number">1</div>
+        <div class="step-content">
+          <div class="step-title">确保 OpenClaw 已安装</div>
+          <div class="step-desc">控制中心需要读取 OpenClaw 的配置和数据</div>
         </div>
       </div>
-
-      <!-- 步骤 2: 连接检查 -->
-      <div class="step-content" data-step="2">
-        <h2 style="margin-top:0">🔌 连接检查</h2>
-        <p style="color:var(--text-secondary);margin-bottom:24px">我们需要确认能否连接到你的 OpenClaw 实例。</p>
-        <div class="form-group">
-          <label class="label">OpenClaw 配置路径</label>
-          <input type="text" class="input" id="configPath" value="/root/.openclaw/openclaw.json" readonly>
-          <div class="hint">默认配置文件路径</div>
-        </div>
-        <div id="connectionStatus" style="padding:16px;border-radius:10px;margin-top:16px"></div>
-      </div>
-
-      <!-- 步骤 3: 功能选择 -->
-      <div class="step-content" data-step="3">
-        <h2 style="margin-top:0">⚙️ 功能选择</h2>
-        <p style="color:var(--text-secondary);margin-bottom:24px">选择你想要启用的功能：</p>
-        <div style="display:flex;flex-direction:column;gap:12px">
-          <label class="checkbox-group">
-            <input type="checkbox" class="checkbox" id="feature-monitoring" checked>
-            <div class="checkbox-label">
-              <div class="checkbox-title">监控与告警</div>
-              <div class="checkbox-desc">实时监控 Agent 状态、定时任务和成本</div>
-            </div>
-          </label>
-          <label class="checkbox-group">
-            <input type="checkbox" class="checkbox" id="feature-chat" checked>
-            <div class="checkbox-label">
-              <div class="checkbox-title">对话界面</div>
-              <div class="checkbox-desc">通过 Web 界面与 Agent 对话</div>
-            </div>
-          </label>
-          <label class="checkbox-group">
-            <input type="checkbox" class="checkbox" id="feature-logs" checked>
-            <div class="checkbox-label">
-              <div class="checkbox-title">日志分析</div>
-              <div class="checkbox-desc">查看和分析系统日志与错误</div>
-            </div>
-          </label>
-          <label class="checkbox-group">
-            <input type="checkbox" class="checkbox" id="feature-cost" checked>
-            <div class="checkbox-label">
-              <div class="checkbox-title">成本分析</div>
-              <div class="checkbox-desc">追踪和分析 Token 使用成本</div>
-            </div>
-          </label>
+      <div class="step">
+        <div class="step-number">2</div>
+        <div class="step-content">
+          <div class="step-title">检查连接状态</div>
+          <div class="step-desc">控制中心会自动检测 OpenClaw Gateway 状态</div>
         </div>
       </div>
-
-      <!-- 步骤 4: 完成 -->
-      <div class="step-content" data-step="4">
-        <div class="success-icon">✅</div>
-        <div class="success-message">设置完成！</div>
-        <div class="success-detail">你现在可以开始使用 OpenClaw 控制中心了</div>
-        <div style="background:var(--bg-tertiary);border-radius:10px;padding:16px;text-align:left">
-          <div style="font-weight:600;margin-bottom:12px">快速开始：</div>
-          <ul style="margin:0;padding-left:20px;color:var(--text-secondary);line-height:1.8">
-            <li>查看 <a href="/" style="color:var(--accent-primary)">控制台首页</a> 了解系统状态</li>
-            <li>访问 <a href="/chat.html" style="color:var(--accent-primary)">对话界面</a> 与 Agent 交互</li>
-            <li>查看 <a href="/crons.html" style="color:var(--accent-primary)">定时任务</a> 管理自动化</li>
-            <li>检查 <a href="/cost.html" style="color:var(--accent-primary)">成本分析</a> 追踪使用情况</li>
-          </ul>
+      <div class="step">
+        <div class="step-number">3</div>
+        <div class="step-content">
+          <div class="step-title">开始使用</div>
+          <div class="step-desc">查看会话、任务、成本等信息</div>
         </div>
       </div>
     </div>
-
-    <div class="wizard-actions">
-      <button class="btn" id="prevBtn" style="display:none">上一步</button>
-      <button class="btn primary" id="nextBtn">下一步</button>
+    
+    <div>
+      <a href="/" class="btn">进入控制中心</a>
+      <a href="javascript:history.back()" class="btn btn-secondary">返回</a>
     </div>
   </div>
-
-  <script>
-    let currentStep = 1;
-    const totalSteps = 4;
-
-    function updateUI() {
-      // 更新步骤指示器
-      document.querySelectorAll('.step').forEach((el, idx) => {
-        const step = idx + 1;
-        el.classList.remove('active', 'completed');
-        if (step < currentStep) el.classList.add('completed');
-        if (step === currentStep) el.classList.add('active');
-      });
-
-      // 更新内容
-      document.querySelectorAll('.step-content').forEach(el => {
-        el.classList.remove('active');
-        if (parseInt(el.dataset.step) === currentStep) {
-          el.classList.add('active');
-        }
-      });
-
-      // 更新按钮
-      const prevBtn = document.getElementById('prevBtn');
-      const nextBtn = document.getElementById('nextBtn');
-      
-      prevBtn.style.display = currentStep > 1 ? 'block' : 'none';
-      
-      if (currentStep === totalSteps) {
-        nextBtn.textContent = '进入控制中心';
-        nextBtn.onclick = finish;
-      } else {
-        nextBtn.textContent = '下一步';
-        nextBtn.onclick = nextStep;
-      }
-
-      // 步骤 2 自动检查连接
-      if (currentStep === 2) {
-        checkConnection();
-      }
-    }
-
-    async function checkConnection() {
-      const status = document.getElementById('connectionStatus');
-      status.innerHTML = '<div style="text-align:center;color:var(--text-tertiary)">检查中...</div>';
-
-      try {
-        const response = await fetch('/api/control-center-summary');
-        if (response.ok) {
-          const data = await response.json();
-          status.innerHTML = `
-            <div style="background:var(--success-bg);border:1px solid var(--success-border);padding:16px;border-radius:10px">
-              <strong style="color:var(--success)">✅ 连接成功</strong>
-              <p style="margin:8px 0 0;color:var(--text-secondary);font-size:14px">
-                检测到 ${data.agentCount} 个 Agent，${data.cronCount} 个定时任务
-              </p>
-            </div>
-          `;
-        } else {
-          throw new Error('连接失败');
-        }
-      } catch (err) {
-        status.innerHTML = `
-          <div style="background:var(--warning-bg);border:1px solid var(--warning-border);padding:16px;border-radius:10px">
-            <strong style="color:var(--warning)">⚠️ 连接失败</strong>
-            <p style="margin:8px 0 0;color:var(--text-secondary);font-size:14px">
-              无法连接到 OpenClaw。请确保 OpenClaw 已正确安装并运行。
-            </p>
-          </div>
-        `;
-      }
-    }
-
-    function nextStep() {
-      if (currentStep < totalSteps) {
-        currentStep++;
-        updateUI();
-      }
-    }
-
-    function prevStep() {
-      if (currentStep > 1) {
-        currentStep--;
-        updateUI();
-      }
-    }
-
-    function finish() {
-      // 保存设置完成标记
-      localStorage.setItem('openclaw-setup-completed', 'true');
-      
-      // 保存功能选择
-      const features = {
-        monitoring: document.getElementById('feature-monitoring').checked,
-        chat: document.getElementById('feature-chat').checked,
-        logs: document.getElementById('feature-logs').checked,
-        cost: document.getElementById('feature-cost').checked
-      };
-      localStorage.setItem('openclaw-features', JSON.stringify(features));
-      
-      // 跳转到首页
-      window.location.href = '/';
-    }
-
-    document.getElementById('prevBtn').onclick = prevStep;
-    document.getElementById('nextBtn').onclick = nextStep;
-
-    // 检查是否已完成设置
-    if (localStorage.getItem('openclaw-setup-completed') === 'true') {
-      const skip = confirm('你已经完成过设置向导。是否要跳过并直接进入控制中心？');
-      if (skip) {
-        window.location.href = '/';
-      }
-    }
-
-    updateUI();
-  </script>
 </body>
 </html>

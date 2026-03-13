@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Channels 管理 - OpenClaw 控制中心</title>
+  <style>
+    body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;background:#f5f7fb;margin:0;color:#111827}.wrap{max-width:1180px;margin:0 auto;padding:24px}.top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:20px}.btn{border:1px solid #dbe1ea;background:#fff;border-radius:10px;padding:9px 14px;text-decoration:none;color:#334155}.panel{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:20px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:16px}.stat{background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:14px}.label{font-size:12px;color:#64748b;display:block;margin-bottom:8px}.value{font-size:24px;font-weight:700}.toolbar{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:16px}.search{flex:1;min-width:240px;border:1px solid #dbe1ea;border-radius:10px;padding:10px 12px;font-size:14px}.tabs{display:flex;gap:8px;flex-wrap:wrap}.tab{border:1px solid #dbe1ea;background:#fff;border-radius:999px;padding:8px 12px;cursor:pointer;color:#475569}.tab.active{background:#111827;color:#fff;border-color:#111827}
+    .list{display:flex;flex-direction:column;gap:12px}.row{display:flex;justify-content:space-between;gap:12px;padding:16px;border:1px solid #e2e8f0;border-radius:14px;background:#fff;align-items:flex-start;flex-wrap:wrap}.meta{font-size:12px;color:#64748b;margin-top:6px}.tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.tag,.pill{padding:4px 10px;border-radius:999px;font-size:12px;font-weight:600;display:inline-flex;align-items:center}.tag{background:#eff6ff;color:#1d4ed8}.ok{background:#dcfce7;color:#166534}.warn{background:#fef3c7;color:#92400e}.off{background:#e5e7eb;color:#475569}.empty{color:#94a3b8;padding:20px 0}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <h1>Channels 管理</h1>
+        <div class="meta">看启用状态之外，补充账号数量、凭据识别和配置缺口提醒，方便快速判断“能不能正常接消息”。</div>
+      </div>
+      <a class="btn" href="/">返回首页</a>
+    </div>
+    <div class="stats" id="stats"></div>
+    <div class="panel">
+      <div class="toolbar">
+        <input id="search" class="search" placeholder="搜索渠道名称或策略">
+        <div class="tabs" id="tabs"></div>
+      </div>
+      <div class="list" id="list">加载中...</div>
+    </div>
+  </div>
+  <script>
+    let items=[]; let activeTab='all';
+    const tabs=[['all','全部'],['enabled','已启用'],['warn','待修复'],['disabled','未启用']];
+    const fmt=n=>Number(n||0).toLocaleString('zh-CN');
+    function renderStats(){
+      const enabled=items.filter(i=>i.enabled).length, warn=items.filter(i=>i.issues?.length).length, creds=items.filter(i=>i.hasCredentials).length, accounts=items.reduce((a,b)=>a+Number(b.enabledAccountCount||0),0);
+      document.getElementById('stats').innerHTML=[['渠道总数',items.length],['已启用',enabled],['已识别凭据',creds],['启用账号数',accounts],['待修复',warn]].map(([l,v])=>`<div class="stat"><span class="label">${l}</span><div class="value">${fmt(v)}</div></div>`).join('');
+    }
+    function renderTabs(){ document.getElementById('tabs').innerHTML=tabs.map(([k,l])=>`<button class="tab ${activeTab===k?'active':''}" data-tab="${k}">${l}</button>`).join(''); document.querySelectorAll('[data-tab]').forEach(el=>el.onclick=()=>{activeTab=el.dataset.tab; render();}); }
+    function getFiltered(){ const q=document.getElementById('search').value.trim().toLowerCase(); return items.filter(i=>{ const tabHit=activeTab==='all'||(activeTab==='enabled'&&i.enabled)||(activeTab==='disabled'&&!i.enabled)||(activeTab==='warn'&&i.issues?.length); const text=[i.channel,i.groupPolicy||''].join(' ').toLowerCase(); return tabHit&&(!q||text.includes(q)); }); }
+    function render(){ renderTabs(); renderStats(); const list=getFiltered(); document.getElementById('list').innerHTML=list.length?list.map(i=>`<div class="row"><div><div><strong>${i.channel}</strong> <span class="pill ${i.health==='ok'?'ok':i.health==='warn'?'warn':'off'}">${i.health==='ok'?'正常':i.health==='warn'?'待修复':'未启用'}</span></div><div class="meta">账号：${i.enabledAccountCount}/${i.accountCount} 已启用 · 群策略：${i.groupPolicy||'未设置'} · allowFrom：${fmt(i.allowFromCount)} · 代理：${i.hasProxy?'有':'无'}</div><div class="tags"><span class="tag">${i.enabled?'channel enabled':'channel disabled'}</span><span class="tag">${i.hasCredentials?'已识别凭据':'未识别凭据'}</span></div>${i.issues?.length?`<div class="meta" style="color:#92400e">风险：${i.issues.join('；')}</div>`:''}</div><div class="meta">${i.enabled?'可接入':'停用中'}</div></div>`).join(''):'<div class="empty">当前筛选条件下没有渠道</div>'; }
+    fetch('/api/channels-summary').then(r=>r.json()).then(data=>{items=data; render();});
+    document.getElementById('search').addEventListener('input',render);
+  </script>
+</body>
+</html>

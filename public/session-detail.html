@@ -4,175 +4,166 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>会话详情 - OpenClaw 控制中心</title>
+  <link rel="stylesheet" href="/theme-vars.css">
   <style>
-    body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;background:#f5f7fb;margin:0;color:#111827}
-    .wrap{max-width:1240px;margin:0 auto;padding:24px}
-    .top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:20px;flex-wrap:wrap}
-    .btn{border:1px solid #dbe1ea;background:#fff;border-radius:10px;padding:9px 14px;text-decoration:none;color:#334155;cursor:pointer}
-    .grid{display:grid;grid-template-columns:1.2fr .8fr;gap:16px}
-    .panel{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:20px}
-    .meta{font-size:12px;color:#64748b;margin-top:6px;word-break:break-all}
-    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:16px}
-    .stat{background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:14px}
-    .stat .label{font-size:12px;color:#64748b;display:block;margin-bottom:8px}
-    .stat .value{font-size:24px;font-weight:700}
-    .kv{display:grid;grid-template-columns:160px 1fr;gap:10px 12px;font-size:14px}
-    .kv div:nth-child(odd){color:#64748b}
-    .list{display:flex;flex-direction:column;gap:10px}
-    .row{border:1px solid #e2e8f0;border-radius:14px;padding:14px;background:#fff}
-    .row-title{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-weight:700}
-    .pill{padding:4px 10px;border-radius:999px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:6px}
-    .info{background:#dbeafe;color:#1d4ed8}.ok{background:#dcfce7;color:#166534}.warn{background:#fef3c7;color:#92400e}.err{background:#fee2e2;color:#991b1b}
-    .diag{border-radius:14px;padding:14px;border:1px solid #e2e8f0;background:#fff}
-    .diag.ok{background:#f0fdf4;border-color:#bbf7d0}.diag.warn{background:#fffbeb;border-color:#fde68a}.diag.info{background:#eff6ff;border-color:#bfdbfe}.diag.err{background:#fef2f2;border-color:#fecaca}
-    .empty{color:#94a3b8}
-    .anchor-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-    @media (max-width: 960px){.grid{grid-template-columns:1fr}}
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+    }
+    .navbar {
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-primary);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .navbar-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 24px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .page-title { font-size: 18px; font-weight: 700; }
+    .btn {
+      padding: 8px 16px;
+      border: 1px solid var(--border-primary);
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      text-decoration: none;
+      color: var(--text-primary);
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+    .btn:hover { background: var(--bg-hover); }
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 32px 24px;
+    }
+    .panel {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-primary);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    .panel-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 20px;
+    }
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 16px;
+    }
+    .info-item {
+      padding: 16px;
+      background: var(--bg-tertiary);
+      border-radius: 10px;
+    }
+    .info-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-tertiary);
+      margin-bottom: 8px;
+    }
+    .info-value {
+      font-weight: 600;
+      font-size: 15px;
+    }
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-muted);
+    }
+    .empty-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
   </style>
+  <script src="/theme.js"></script>
 </head>
 <body>
-  <div class="wrap">
-    <div class="top">
-      <div>
-        <h1 id="title">会话详情</h1>
-        <div class="meta" id="subtitle">加载中...</div>
-      </div>
-      <div>
-        <a class="btn" href="/sessions.html">返回会话中心</a>
-        <a class="btn" href="/">返回首页</a>
+  <nav class="navbar">
+    <div class="navbar-content">
+      <h1 class="page-title">会话详情</h1>
+      <a href="/sessions.html" class="btn">返回列表</a>
+    </div>
+  </nav>
+  <div class="container">
+    <div class="panel">
+      <h2 class="panel-title">基础信息</h2>
+      <div class="info-grid" id="basicInfo">
+        <div class="empty-state">
+          <div class="empty-icon">💬</div>
+          <div>加载中...</div>
+        </div>
       </div>
     </div>
-
-    <div class="stats" id="stats"></div>
-
-    <div class="grid">
-      <div class="panel">
-        <h3>基础信息</h3>
-        <div class="kv" id="baseInfo"></div>
-        <div class="anchor-row" id="links"></div>
-      </div>
-      <div class="panel">
-        <h3>同族诊断</h3>
-        <div class="stats" id="insightStats"></div>
-        <div class="list" id="diagnostics"></div>
-      </div>
-      <div class="panel">
-        <h3>同 Agent 近期会话</h3>
-        <div class="list" id="peerSessions"></div>
-      </div>
-      <div class="panel">
-        <h3>同族运行记录</h3>
-        <div class="list" id="relatedRuns"></div>
-      </div>
-      <div class="panel">
-        <h3>说明</h3>
-        <div class="meta">当前详情页基于会话键结构和本地汇总数据生成，不依赖 OpenClaw runtime。新增同族诊断后，可以先判断成本偏移、活跃度和输入/输出结构，再决定是否继续深挖底层日志。</div>
-      </div>
+    <div class="panel">
+      <h2 class="panel-title">Token 统计</h2>
+      <div class="info-grid" id="tokenInfo">加载中...</div>
     </div>
   </div>
-
   <script>
-    function fmtTime(value){
-      if(!value) return '未知';
-      const ts = Number(value);
-      return new Date(ts > 1e12 ? ts : value).toLocaleString('zh-CN',{hour12:false});
-    }
-    function fmtNum(value){ return Number(value || 0).toLocaleString('zh-CN'); }
-    function fmtPct(value){ return `${(Number(value || 0) * 100).toFixed(1)}%`; }
-    function kvRow(label, value){ return `<div>${label}</div><div>${value ?? '-'}</div>`; }
-    function diagClass(level){
-      if(level === 'ok') return 'diag ok';
-      if(level === 'warn') return 'diag warn';
-      if(level === 'error') return 'diag err';
-      return 'diag info';
-    }
-
-    async function load(){
-      const key = new URLSearchParams(location.search).get('key');
-      if(!key){
-        document.getElementById('subtitle').textContent = '缺少 key 参数';
+    const params = new URLSearchParams(window.location.search);
+    const key = params.get('key');
+    
+    async function load() {
+      if (!key) {
+        document.getElementById('basicInfo').innerHTML = '<div class="empty-state"><div class="empty-icon">❌</div><div>缺少会话 key</div></div>';
         return;
       }
-      const res = await fetch(`/api/session-detail?key=${encodeURIComponent(key)}`);
-      const data = await res.json();
-      if(!res.ok || !data.ok){
-        document.getElementById('subtitle').textContent = data.error || '加载失败';
-        return;
+      
+      try {
+        const detail = await fetch(`/api/session-detail?key=${encodeURIComponent(key)}`).then(r => r.json());
+        
+        document.getElementById('basicInfo').innerHTML = `
+          <div class="info-item">
+            <div class="info-label">会话名称</div>
+            <div class="info-value">${detail.displayName || detail.key}</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">模型</div>
+            <div class="info-value">${detail.model || 'unknown'}</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">渠道</div>
+            <div class="info-value">${detail.channel || 'unknown'}</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">最后活跃</div>
+            <div class="info-value">${detail.updatedAt ? new Date(detail.updatedAt).toLocaleString('zh-CN') : '未知'}</div>
+          </div>
+        `;
+        
+        document.getElementById('tokenInfo').innerHTML = `
+          <div class="info-item">
+            <div class="info-label">总 Tokens</div>
+            <div class="info-value">${(detail.totalTokens || 0).toLocaleString('zh-CN')}</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">输入 Tokens</div>
+            <div class="info-value">${(detail.inputTokens || 0).toLocaleString('zh-CN')}</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">输出 Tokens</div>
+            <div class="info-value">${(detail.outputTokens || 0).toLocaleString('zh-CN')}</div>
+          </div>
+        `;
+      } catch (err) {
+        console.error('加载失败', err);
+        document.getElementById('basicInfo').innerHTML = '<div class="empty-state"><div class="empty-icon">❌</div><div>加载失败</div></div>';
       }
-
-      const { session, aggregate, familyInsights, relatedRuns, peerSessions, links } = data;
-      document.getElementById('title').textContent = session.displayName || session.key;
-      document.getElementById('subtitle').textContent = `Agent ${session.parsed.agentId} · 类型 ${session.parsed.kind} · 模型 ${session.model || 'unknown'} · 最后活跃 ${fmtTime(session.updatedAt)}`;
-      document.getElementById('stats').innerHTML = [
-        ['当前会话总 Tokens', fmtNum(session.totalTokens)],
-        ['同族运行数', fmtNum(aggregate.runCount)],
-        ['同族累计 Tokens', fmtNum(aggregate.totalTokens)],
-        ['平均每次 Tokens', fmtNum(aggregate.avgTokensPerRun)]
-      ].map(([label, value]) => `<div class="stat"><span class="label">${label}</span><div class="value">${value}</div></div>`).join('');
-
-      document.getElementById('baseInfo').innerHTML = [
-        kvRow('会话键', session.key),
-        kvRow('Agent', session.parsed.agentId),
-        kvRow('类型', session.parsed.kind),
-        kvRow('渠道', session.parsed.channel),
-        kvRow('Target', session.parsed.target || '-'),
-        kvRow('Cron ID', session.parsed.cronId || '-'),
-        kvRow('Run ID', session.parsed.runId || '-'),
-        kvRow('模型', session.model || 'unknown'),
-        kvRow('输入 Tokens', fmtNum(session.inputTokens)),
-        kvRow('输出 Tokens', fmtNum(session.outputTokens)),
-        kvRow('总 Tokens', fmtNum(session.totalTokens)),
-        kvRow('同族最新活跃', fmtTime(aggregate.latestUpdatedAt)),
-        kvRow('同族模型分布', (aggregate.models || []).join(' / ') || 'unknown')
-      ].join('');
-
-      document.getElementById('links').innerHTML = [
-        links?.cronBoard && links?.cronId ? `<a class="btn" href="${links.cronBoard}">返回定时任务页定位 Cron</a>` : '',
-        session.parsed.cronId ? `<span class="meta">当前会话来自 Cron：${session.parsed.cronId}</span>` : '<span class="meta">当前不是 Cron 会话，可直接看同 Agent 横向比较。</span>'
-      ].filter(Boolean).join('');
-
-      document.getElementById('insightStats').innerHTML = [
-        ['同族内 Tokens 排名', `${fmtNum(familyInsights.tokenRank)} / ${fmtNum(familyInsights.familySize)}`],
-        ['24h 内活跃会话', fmtNum(familyInsights.activeIn24h)],
-        ['当前输出占比', fmtPct(familyInsights.outputRatio)],
-        ['占同族总 Tokens', fmtPct(familyInsights.totalShare)]
-      ].map(([label, value]) => `<div class="stat"><span class="label">${label}</span><div class="value">${value}</div></div>`).join('');
-
-      document.getElementById('diagnostics').innerHTML = (familyInsights.diagnostics || []).map(item => `
-        <div class="${diagClass(item.level)}">
-          <div><strong>${item.title}</strong></div>
-          <div class="meta" style="margin-top:8px">${item.detail}</div>
-        </div>
-      `).join('');
-
-      document.getElementById('peerSessions').innerHTML = peerSessions.length ? peerSessions.map(item => `
-        <div class="row">
-          <div class="row-title">
-            <span>${item.displayName}</span>
-            <span class="pill info">${item.kind}</span>
-          </div>
-          <div class="meta">模型：${item.model} · 最后活跃：${fmtTime(item.updatedAt)}</div>
-          <div class="meta">总 Tokens：${fmtNum(item.totalTokens)}</div>
-          <div class="meta"><a href="/session-detail.html?key=${encodeURIComponent(item.key)}">进入该会话</a></div>
-        </div>
-      `).join('') : '<div class="empty">暂无同 Agent 近期会话</div>';
-
-      document.getElementById('relatedRuns').innerHTML = relatedRuns.length ? relatedRuns.map(item => `
-        <div class="row" style="border-color:${item.isCurrent ? '#bfdbfe' : '#e2e8f0'};background:${item.isCurrent ? '#f8fbff' : '#fff'}">
-          <div class="row-title">
-            <span>${item.displayName}</span>
-            <span>
-              <span class="pill warn">${item.kind}</span>
-              <span class="pill ok">${fmtNum(item.totalTokens)} Tokens</span>
-              ${item.isCurrent ? '<span class="pill info">当前会话</span>' : ''}
-            </span>
-          </div>
-          <div class="meta">更新时间：${fmtTime(item.updatedAt)} · 模型：${item.model}</div>
-          <div class="meta">输入 ${fmtNum(item.inputTokens)} · 输出 ${fmtNum(item.outputTokens)}${item.runId ? ` · Run ${item.runId}` : ''}</div>
-          ${!item.isCurrent ? `<div class="meta"><a href="/session-detail.html?key=${encodeURIComponent(item.key)}">切换到该会话</a></div>` : ''}
-        </div>
-      `).join('') : '<div class="empty">暂无同族运行记录</div>';
     }
+    
     load();
   </script>
 </body>
