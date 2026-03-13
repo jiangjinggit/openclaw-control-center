@@ -510,6 +510,44 @@ http.createServer((req, res) => {
     }
   }
 
+  if (url.pathname === '/api/proxy-config' && req.method === 'GET') {
+    const proxyConfigPath = path.join(dataDir, 'proxy-config.json');
+    try {
+      const config = loadJson(proxyConfigPath, {});
+      return send(res, 200, JSON.stringify(config), 'application/json; charset=utf-8');
+    } catch (err) {
+      return send(res, 200, JSON.stringify({}), 'application/json; charset=utf-8');
+    }
+  }
+
+  if (url.pathname === '/api/proxy-config' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', () => {
+      try {
+        const config = JSON.parse(body);
+        const proxyConfigPath = path.join(dataDir, 'proxy-config.json');
+        fs.writeFileSync(proxyConfigPath, JSON.stringify(config, null, 2), 'utf-8');
+        return send(res, 200, JSON.stringify({ ok: true }), 'application/json; charset=utf-8');
+      } catch (err) {
+        return send(res, 500, JSON.stringify({ ok: false, error: err.message }), 'application/json; charset=utf-8');
+      }
+    });
+    return;
+  }
+
+  if (url.pathname === '/api/proxy-test' && req.method === 'POST') {
+    try {
+      const { execSync } = require('child_process');
+      const start = Date.now();
+      execSync('curl -I -s -m 5 https://www.google.com', { encoding: 'utf-8', timeout: 10000 });
+      const latency = Date.now() - start;
+      return send(res, 200, JSON.stringify({ ok: true, latency }), 'application/json; charset=utf-8');
+    } catch (err) {
+      return send(res, 200, JSON.stringify({ ok: false, error: '连接失败' }), 'application/json; charset=utf-8');
+    }
+  }
+
   if (url.pathname === '/api/cron-detail') {
     const cronId = url.searchParams.get('id') || '';
     if (!cronId) return send(res, 400, JSON.stringify({ ok: false, error: 'missing id' }), 'application/json; charset=utf-8');
