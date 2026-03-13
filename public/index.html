@@ -273,6 +273,7 @@
     }
   </style>
   <script src="/theme.js"></script>
+  <script src="/performance.js"></script>
 </head>
 <body>
   <!-- 导航栏 -->
@@ -397,8 +398,8 @@
     async function loadData() {
       try {
         const [summary, crons] = await Promise.all([
-          fetch('/api/control-center-summary').then(r => r.json()),
-          fetch('/api/cron-real').then(r => r.json())
+          window.perfOptimizer.cachedFetch('/api/control-center-summary', { ttl: 30000 }),
+          window.perfOptimizer.cachedFetch('/api/cron-real', { ttl: 30000 })
         ]);
 
         // 更新统计卡片

@@ -239,6 +239,7 @@
     }
   </style>
   <script src="/theme.js"></script>
+  <script src="/performance.js"></script>
 </head>
 <body>
   <!-- 导航栏 -->
@@ -413,7 +414,9 @@
     }
 
     // 事件监听
-    document.getElementById('searchInput').oninput = renderTasks;
+    // 搜索防抖优化
+    const debouncedRender = window.perfOptimizer ? window.perfOptimizer.debounce(renderTasks, 300) : renderTasks;
+    document.getElementById('searchInput').oninput = debouncedRender;
 
     document.querySelectorAll('.filter-tab').forEach(tab => {
       tab.onclick = () => {
