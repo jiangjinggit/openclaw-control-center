@@ -853,7 +853,17 @@ http.createServer((req, res) => {
           try {
             // 解析 JSON 输出
             const result = JSON.parse(stdout.trim());
-            const response = result.reply || result.content || stdout.trim();
+            // 提取真正的回复内容：result.result.payloads[0].text
+            let response = '';
+            if (result.result && result.result.payloads && result.result.payloads.length > 0) {
+              response = result.result.payloads[0].text || '';
+            } else if (result.reply) {
+              response = result.reply;
+            } else if (result.content) {
+              response = result.content;
+            } else {
+              response = stdout.trim();
+            }
             return send(res, 200, JSON.stringify({ ok: true, response }), 'application/json; charset=utf-8');
           } catch (parseErr) {
             // 如果不是 JSON，直接返回文本
