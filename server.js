@@ -840,6 +840,27 @@ http.createServer((req, res) => {
     return;
   }
 
+  // 消息发送 API
+  if (url.pathname === '/api/chat/send' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+      try {
+        const { agentId, message } = JSON.parse(body);
+        // 使用 openclaw sessions send 命令发送消息
+        execFile('openclaw', ['sessions', 'send', '--agent', agentId, message], { timeout: 60000 }, (err, stdout, stderr) => {
+          if (err) return send(res, 500, JSON.stringify({ ok: false, error: stderr || err.message }), 'application/json; charset=utf-8');
+          // 解析输出获取回复
+          const response = stdout.trim();
+          return send(res, 200, JSON.stringify({ ok: true, response }), 'application/json; charset=utf-8');
+        });
+      } catch (err) {
+        return send(res, 400, JSON.stringify({ ok: false, error: err.message }), 'application/json; charset=utf-8');
+      }
+    });
+    return;
+  }
+
   if (url.pathname === '/api/live/openclaw' && req.method === 'GET') {
     Promise.all([
       fetch('http://127.0.0.1:3000/health').then(r => r.text()).catch(() => 'unavailable')

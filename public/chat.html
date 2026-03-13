@@ -404,15 +404,28 @@
       renderMessages();
 
       try {
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // 调用真实的消息发送 API
+        const res = await fetch('/api/chat/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            agentId: currentAgent.id, 
+            message: content 
+          })
+        });
 
-        const assistantMessage = {
-          role: 'assistant',
-          content: `这是一个模拟响应。实际使用时，这里会调用 OpenClaw sessions_send API 向 ${currentAgent.name} 发送消息并获取回复。`,
-          timestamp: Date.now()
-        };
-
-        messages.push(assistantMessage);
+        const data = await res.json();
+        
+        if (data.ok) {
+          const assistantMessage = {
+            role: 'assistant',
+            content: data.response || '(无响应)',
+            timestamp: Date.now()
+          };
+          messages.push(assistantMessage);
+        } else {
+          throw new Error(data.error || '发送失败');
+        }
       } catch (err) {
         console.error('发送消息失败', err);
         messages.push({
