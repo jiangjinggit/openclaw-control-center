@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>配置概览 - OpenClaw 控制中心</title>
+  <style>
+    body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;background:#f5f7fb;margin:0;color:#111827}
+    .wrap{max-width:1200px;margin:0 auto;padding:24px}
+    .top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+    .btn{border:1px solid #dbe1ea;background:#fff;border-radius:10px;padding:9px 14px;text-decoration:none;color:#334155;cursor:pointer}
+    .section{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:20px;margin-bottom:16px}
+    .section-title{font-size:18px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+    .pill{padding:4px 10px;border-radius:999px;font-size:12px;font-weight:600}
+    .ok{background:#dcfce7;color:#166534}
+    .warn{background:#fef3c7;color:#92400e}
+    .error{background:#fee2e2;color:#991b1b}
+    .info{background:#dbeafe;color:#1e40af}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+    .card{border:1px solid #e2e8f0;border-radius:14px;padding:16px;background:#f8fafc}
+    .label{font-size:12px;color:#64748b;margin-bottom:6px}
+    .value{font-weight:600;word-break:break-all;margin-bottom:8px}
+    .meta{font-size:12px;color:#64748b;margin-top:8px}
+    .risk-list{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+    .risk-item{padding:12px;border-radius:10px;border:1px solid #fbbf24;background:#fffbeb;font-size:13px}
+    .empty{color:#94a3b8;padding:20px 0;text-align:center}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <h1>配置概览</h1>
+        <div class="meta">查看 OpenClaw 关键配置、识别风险项与缺失配置</div>
+      </div>
+      <a class="btn" href="/">返回首页</a>
+    </div>
+
+    <div class="section">
+      <div class="section-title">
+        <span>🔧 基础配置</span>
+        <span class="pill info" id="basicStatus">加载中...</span>
+      </div>
+      <div class="grid" id="basicConfig">加载中...</div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">
+        <span>🤖 Agent 配置</span>
+        <span class="pill info" id="agentStatus">加载中...</span>
+      </div>
+      <div class="grid" id="agentConfig">加载中...</div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">
+        <span>🔌 渠道配置</span>
+        <span class="pill info" id="channelStatus">加载中...</span>
+      </div>
+      <div class="grid" id="channelConfig">加载中...</div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">
+        <span>🧠 模型配置</span>
+        <span class="pill info" id="modelStatus">加载中...</span>
+      </div>
+      <div class="grid" id="modelConfig">加载中...</div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">
+        <span>⚠️ 风险提示</span>
+        <span class="pill warn" id="riskCount">0</span>
+      </div>
+      <div class="risk-list" id="riskList">加载中...</div>
+    </div>
+  </div>
+
+  <script>
+    async function load() {
+      try {
+        const [agents, channels, models, summary] = await Promise.all([
+          fetch('/api/agents-summary').then(r => r.json()),
+          fetch('/api/channels-summary').then(r => r.json()),
+          fetch('/api/models-summary').then(r => r.json()),
+          fetch('/api/control-center-summary').then(r => r.json())
+        ]);
+
+        // 基础配置
+        const basicRisks = [];
+        if (!summary.autoSyncEnabled) basicRisks.push('自动同步未启用');
+        if (summary.errorCount > 0) basicRisks.push(`当前有 ${summary.errorCount} 个错误`);
+        
+        document.getElementById('basicStatus').textContent = basicRisks.length ? '待修复' : '正常';
+        document.getElementById('basicStatus').className = `pill ${basicRisks.length ? 'warn' : 'ok'}`;
+        document.getElementById('basicConfig').innerHTML = `
+          <div class="card">
+            <div class="label">Gateway 状态</div>
+            <div class="value">${summary.gateway === 'online' ? '✅ 在线' : '⚠️ 异常'}</div>
+            <div class="meta">最后同步：${summary.lastSyncAt ? new Date(summary.lastSyncAt).toLocaleString('zh-CN') : '未知'}</div>
+          </div>
+          <div class="card">
+            <div class="label">自动同步</div>
+            <div class="value">${summary.autoSyncEnabled ? '✅ 已启用' : '❌ 未启用'}</div>
+          </div>
+          <div class="card">
+            <div class="label">当前错误数</div>
+            <div class="value">${summary.errorCount}</div>
+          </div>
+        `;
+
+        // Agent 配置
+        const agentRisks = [];
+        if (agents.length === 0) agentRisks.push('未配置任何 Agent');
+        const noModel = agents.filter(a => !a.model || a.model === 'unknown');
+        if (noModel.length) agentRisks.push(`${noModel.length} 个 Agent 未配置模型`);
+
+        document.getElementById('agentStatus').textContent = agentRisks.length ? '待修复' : '正常';
+        document.getElementById('agentStatus').className = `pill ${agentRisks.length ? 'warn' : 'ok'}`;
+        document.getElementById('agentConfig').innerHTML = agents.length ? agents.map(a => `
+          <div class="card">
+            <div class="label">${a.name}${a.isDefault ? ' (默认)' : ''}</div>
+            <div class="value">${a.id}</div>
+            <div class="meta">模型：${a.model}</div>
+            <div class="meta">工作区：${a.workspace || '未设置'}</div>
+          </div>
+        `).join('') : '<div class="empty">未配置 Agent</div>';
+
+        // 渠道配置
+        const channelRisks = channels.filter(c => c.issues && c.issues.length > 0);
+        document.getElementById('channelStatus').textContent = channelRisks.length ? `${channelRisks.length} 个待修复` : '正常';
+        document.getElementById('channelStatus').className = `pill ${channelRisks.length ? 'warn' : 'ok'}`;
+        document.getElementById('channelConfig').innerHTML = channels.length ? channels.map(c => `
+          <div class="card">
+            <div class="label">${c.channel}</div>
+            <div class="value">${c.enabled ? '✅ 已启用' : '❌ 未启用'}</div>
+            <div class="meta">账号：${c.enabledAccountCount}/${c.accountCount}</div>
+            <div class="meta">凭据：${c.hasCredentials ? '已识别' : '未识别'}</div>
+            ${c.issues && c.issues.length ? `<div class="meta" style="color:#92400e">⚠️ ${c.issues.join('；')}</div>` : ''}
+          </div>
+        `).join('') : '<div class="empty">未配置渠道</div>';
+
+        // 模型配置
+        const modelRisks = models.filter(m => m.issues && m.issues.length > 0);
+        document.getElementById('modelStatus').textContent = modelRisks.length ? `${modelRisks.length} 个待修复` : '正常';
+        document.getElementById('modelStatus').className = `pill ${modelRisks.length ? 'warn' : 'ok'}`;
+        document.getElementById('modelConfig').innerHTML = models.length ? models.map(m => `
+          <div class="card">
+            <div class="label">${m.provider}</div>
+            <div class="value">${m.api}</div>
+            <div class="meta">模型数：${m.modelCount} · Reasoning：${m.reasoningCount}</div>
+            <div class="meta">Base URL：${m.baseUrl || '未设置'}</div>
+            ${m.issues && m.issues.length ? `<div class="meta" style="color:#92400e">⚠️ ${m.issues.join('；')}</div>` : ''}
+          </div>
+        `).join('') : '<div class="empty">未配置 Provider</div>';
+
+        // 汇总风险
+        const allRisks = [
+          ...basicRisks.map(r => ({ type: '基础配置', text: r })),
+          ...agentRisks.map(r => ({ type: 'Agent', text: r })),
+          ...channelRisks.flatMap(c => (c.issues || []).map(i => ({ type: `渠道 ${c.channel}`, text: i }))),
+          ...modelRisks.flatMap(m => (m.issues || []).map(i => ({ type: `Provider ${m.provider}`, text: i })))
+        ];
+
+        document.getElementById('riskCount').textContent = allRisks.length;
+        document.getElementById('riskList').innerHTML = allRisks.length ? allRisks.map(r => `
+          <div class="risk-item">
+            <strong>${r.type}</strong>：${r.text}
+          </div>
+        `).join('') : '<div class="empty">暂无风险项</div>';
+
+      } catch (err) {
+        console.error('加载失败', err);
+        document.body.innerHTML = '<div class="wrap"><div class="empty">加载失败，请检查服务状态</div></div>';
+      }
+    }
+
+    load();
+  </script>
+</body>
+</html>
