@@ -1,0 +1,97 @@
+/* OpenClaw 控制中心 - 主题系统 */
+
+/* 亮色主题（默认） */
+:root {
+  --bg-primary: #f5f7fb;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f8fafc;
+  --bg-hover: #f1f5f9;
+  --border-primary: #e5e7eb;
+  --border-secondary: #e2e8f0;
+  --border-hover: #cbd5e1;
+  --text-primary: #111827;
+  --text-secondary: #374151;
+  --text-tertiary: #64748b;
+  --text-muted: #94a3b8;
+  --accent-primary: #3b82f6;
+  --accent-hover: #2563eb;
+  --accent-light: #dbeafe;
+  --success: #166534;
+  --success-bg: #dcfce7;
+  --success-border: #86efac;
+  --warning: #92400e;
+  --warning-bg: #fef3c7;
+  --warning-border: #fcd34d;
+  --error: #991b1b;
+  --error-bg: #fee2e2;
+  --error-border: #fca5a5;
+  --info: #1e40af;
+  --info-bg: #dbeafe;
+  --info-border: #93c5fd;
+}
+
+/* 暗色主题 */
+[data-theme="dark"] {
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --bg-tertiary: #334155;
+  --bg-hover: #475569;
+  --border-primary: #334155;
+  --border-secondary: #475569;
+  --border-hover: #64748b;
+  --text-primary: #f1f5f9;
+  --text-secondary: #e2e8f0;
+  --text-tertiary: #cbd5e1;
+  --text-muted: #94a3b8;
+  --accent-primary: #3b82f6;
+  --accent-hover: #60a5fa;
+  --accent-light: #1e40af;
+  --success: #22c55e;
+  --success-bg: #14532d;
+  --success-border: #166534;
+  --warning: #f59e0b;
+  --warning-bg: #78350f;
+  --warning-border: #92400e;
+  --error: #ef4444;
+  --error-bg: #7f1d1d;
+  --error-border: #991b1b;
+  --info: #3b82f6;
+  --info-bg: #1e3a8a;
+  --info-border: #1e40af;
+}
+
+/* 主题切换按钮 */
+.theme-toggle {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transition: all 0.2s ease;
+  z-index: 1000;
+  color: var(--text-primary);
+}
+
+.theme-toggle:hover {
+  transform: scale(1.1);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  background: var(--bg-hover);
+}
+
+.theme-toggle:active {
+  transform: scale(0.95);
+}
+
+/* 平滑过渡 */
+* {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
