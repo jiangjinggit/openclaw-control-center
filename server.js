@@ -847,12 +847,18 @@ http.createServer((req, res) => {
     req.on('end', () => {
       try {
         const { agentId, message } = JSON.parse(body);
-        // 使用 openclaw sessions send 命令发送消息
-        execFile('openclaw', ['sessions', 'send', '--agent', agentId, message], { timeout: 60000 }, (err, stdout, stderr) => {
+        // 使用 openclaw agent 命令发送消息
+        execFile('openclaw', ['agent', '--agent', agentId, '--message', message, '--json'], { timeout: 60000 }, (err, stdout, stderr) => {
           if (err) return send(res, 500, JSON.stringify({ ok: false, error: stderr || err.message }), 'application/json; charset=utf-8');
-          // 解析输出获取回复
-          const response = stdout.trim();
-          return send(res, 200, JSON.stringify({ ok: true, response }), 'application/json; charset=utf-8');
+          try {
+            // 解析 JSON 输出
+            const result = JSON.parse(stdout.trim());
+            const response = result.reply || result.content || stdout.trim();
+            return send(res, 200, JSON.stringify({ ok: true, response }), 'application/json; charset=utf-8');
+          } catch (parseErr) {
+            // 如果不是 JSON，直接返回文本
+            return send(res, 200, JSON.stringify({ ok: true, response: stdout.trim() }), 'application/json; charset=utf-8');
+          }
         });
       } catch (err) {
         return send(res, 400, JSON.stringify({ ok: false, error: err.message }), 'application/json; charset=utf-8');
