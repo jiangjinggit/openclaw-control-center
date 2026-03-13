@@ -499,6 +499,17 @@ http.createServer((req, res) => {
     return send(res, 200, JSON.stringify({ ok: true, ...detail }), 'application/json; charset=utf-8');
   }
 
+  if (url.pathname === '/api/doctor' && req.method === 'POST') {
+    try {
+      const { execSync } = require('child_process');
+      const output = execSync('openclaw doctor --json', { encoding: 'utf-8', timeout: 30000 });
+      const parsed = JSON.parse(output);
+      return send(res, 200, JSON.stringify({ ok: true, raw: parsed, checks: parsed.checks || [] }), 'application/json; charset=utf-8');
+    } catch (err) {
+      return send(res, 500, JSON.stringify({ ok: false, error: err.message }), 'application/json; charset=utf-8');
+    }
+  }
+
   if (url.pathname === '/api/cron-detail') {
     const cronId = url.searchParams.get('id') || '';
     if (!cronId) return send(res, 400, JSON.stringify({ ok: false, error: 'missing id' }), 'application/json; charset=utf-8');

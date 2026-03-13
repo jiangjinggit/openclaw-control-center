@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>系统诊断 - OpenClaw 控制中心</title>
+  <style>
+    body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;background:#f5f7fb;margin:0;color:#111827}
+    .wrap{max-width:1200px;margin:0 auto;padding:24px}
+    .top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+    .btn{border:1px solid #dbe1ea;background:#fff;border-radius:10px;padding:9px 14px;text-decoration:none;color:#334155;cursor:pointer}
+    .btn.primary{background:#3b82f6;color:#fff;border-color:#3b82f6}
+    .btn.primary:hover{background:#2563eb}
+    .btn:disabled{background:#e5e7eb;color:#94a3b8;cursor:not-allowed}
+    .panel{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:20px;margin-bottom:16px}
+    .section-title{font-size:18px;font-weight:700;margin-bottom:16px}
+    .label{font-size:12px;color:#64748b;margin-bottom:8px}
+    .status-card{padding:16px;border:1px solid #e2e8f0;border-radius:14px;background:#f8fafc;margin-bottom:12px}
+    .status-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+    .status-name{font-weight:600;font-size:14px}
+    .pill{padding:4px 10px;border-radius:999px;font-size:12px;font-weight:600}
+    .ok{background:#dcfce7;color:#166534}
+    .warn{background:#fef3c7;color:#92400e}
+    .error{background:#fee2e2;color:#991b1b}
+    .info{background:#dbeafe;color:#1e40af}
+    .status-detail{font-size:13px;color:#374151;line-height:1.6;margin-top:8px}
+    .code-block{background:#1e293b;color:#e2e8f0;padding:16px;border-radius:10px;overflow-x:auto;font-family:'Courier New',monospace;font-size:13px;line-height:1.6;margin-top:12px}
+    .empty{color:#94a3b8;padding:20px 0;text-align:center}
+    .loading{text-align:center;padding:40px;color:#64748b}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <h1>系统诊断</h1>
+        <div class="label">运行 OpenClaw Doctor 检查系统健康状态</div>
+      </div>
+      <div>
+        <button class="btn primary" id="runBtn">运行诊断</button>
+        <a class="btn" href="/">返回首页</a>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="section-title">诊断结果</div>
+      <div id="result">
+        <div class="empty">点击"运行诊断"开始检查系统状态</div>
+      </div>
+    </div>
+
+    <div class="panel" id="rawPanel" style="display:none">
+      <div class="section-title">原始输出</div>
+      <div class="code-block" id="rawOutput"></div>
+    </div>
+  </div>
+
+  <script>
+    async function runDiagnostic() {
+      const btn = document.getElementById('runBtn');
+      const result = document.getElementById('result');
+      const rawPanel = document.getElementById('rawPanel');
+      const rawOutput = document.getElementById('rawOutput');
+
+      btn.disabled = true;
+      btn.textContent = '诊断中...';
+      result.innerHTML = '<div class="loading">正在运行 openclaw doctor --json...</div>';
+      rawPanel.style.display = 'none';
+
+      try {
+        // 调用后端 API 运行 openclaw doctor
+        const response = await fetch('/api/doctor', { method: 'POST' });
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || '诊断失败');
+        }
+
+        // 显示原始输出
+        rawOutput.textContent = JSON.stringify(data.raw, null, 2);
+        rawPanel.style.display = 'block';
+
+        // 解析并显示诊断结果
+        const checks = data.checks || [];
+        if (checks.length === 0) {
+          result.innerHTML = '<div class="empty">未获取到诊断结果</div>';
+          return;
+        }
+
+        result.innerHTML = checks.map(check => {
+          const status = check.status || 'unknown';
+          const statusClass = status === 'ok' ? 'ok' : status === 'warn' ? 'warn' : 'error';
+          const statusText = status === 'ok' ? '正常' : status === 'warn' ? '警告' : '错误';
+
+          return `
+            <div class="status-card">
+              <div class="status-header">
+                <div class="status-name">${check.name || '未知检查项'}</div>
+                <span class="pill ${statusClass}">${statusText}</span>
+              </div>
+              ${check.message ? `<div class="status-detail">${check.message}</div>` : ''}
+              ${check.details ? `<div class="status-detail" style="margin-top:8px;color:#64748b">${check.details}</div>` : ''}
+            </div>
+          `;
+        }).join('');
+
+      } catch (err) {
+        console.error('诊断失败', err);
+        result.innerHTML = `
+          <div class="status-card">
+            <div class="status-header">
+              <div class="status-name">诊断失败</div>
+              <span class="pill error">错误</span>
+            </div>
+            <div class="status-detail">${err.message}</div>
+          </div>
+        `;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '运行诊断';
+      }
+    }
+
+    document.getElementById('runBtn').onclick = runDiagnostic;
+  </script>
+</body>
+</html>
