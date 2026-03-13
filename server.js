@@ -861,6 +861,30 @@ http.createServer((req, res) => {
     return;
   }
 
+  // 日志 API
+  if (url.pathname === '/api/logs' && req.method === 'GET') {
+    const limit = url.searchParams.get('limit') || '200';
+    execFile('openclaw', ['logs', '--json', '--limit', limit, '--plain'], { timeout: 10000 }, (err, stdout, stderr) => {
+      if (err) return send(res, 500, JSON.stringify({ ok: false, error: stderr || err.message }), 'application/json; charset=utf-8');
+      try {
+        // 解析 JSON 日志行
+        const lines = stdout.trim().split('\n').filter(line => line.trim());
+        const logs = lines.map(line => {
+          try {
+            return JSON.parse(line);
+          } catch {
+            // 如果不是 JSON，返回纯文本格式
+            return { level: 'info', message: line, timestamp: Date.now() };
+          }
+        });
+        return send(res, 200, JSON.stringify(logs), 'application/json; charset=utf-8');
+      } catch (parseErr) {
+        return send(res, 500, JSON.stringify({ ok: false, error: 'Failed to parse logs' }), 'application/json; charset=utf-8');
+      }
+    });
+    return;
+  }
+
   if (url.pathname === '/api/live/openclaw' && req.method === 'GET') {
     Promise.all([
       fetch('http://127.0.0.1:3000/health').then(r => r.text()).catch(() => 'unavailable')

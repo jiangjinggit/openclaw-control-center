@@ -402,18 +402,8 @@
 
     async function loadLogs() {
       try {
-        // 模拟日志数据（实际应该从 OpenClaw 日志文件或 API 获取）
-        logs = [
-          { level: 'error', message: 'Failed to connect to provider: openai', source: 'gateway', timestamp: Date.now() - 300000, context: 'provider-init' },
-          { level: 'warn', message: 'Session timeout: agent:djy_build:telegram:direct:8237305071', source: 'session-manager', timestamp: Date.now() - 600000 },
-          { level: 'info', message: 'Cron job completed: openclaw-ecosystem-hourly-business-ideation', source: 'cron', timestamp: Date.now() - 900000 },
-          { level: 'error', message: 'Workspace deactivated: /root/.openclaw/workspace-djy-build', source: 'workspace', timestamp: Date.now() - 1200000 },
-          { level: 'info', message: 'Gateway started on port 4311', source: 'gateway', timestamp: Date.now() - 3600000 },
-          { level: 'debug', message: 'Token usage: 1234 input, 567 output', source: 'usage-tracker', timestamp: Date.now() - 1800000 },
-          { level: 'warn', message: 'High cost detected: ¥21.82 today', source: 'cost-monitor', timestamp: Date.now() - 2400000 },
-          { level: 'info', message: 'New session created: faint-gulf', source: 'session-manager', timestamp: Date.now() - 3000000 }
-        ];
-
+        logs = await fetch('/api/logs?limit=200').then(r => r.json());
+        
         // 更新来源过滤器
         const sources = [...new Set(logs.map(l => l.source).filter(Boolean))].sort();
         document.getElementById('sourceFilter').innerHTML = 
