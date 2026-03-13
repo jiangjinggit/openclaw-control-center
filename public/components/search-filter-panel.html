@@ -1,0 +1,295 @@
+<!-- 搜索和过滤组件 -->
+<style>
+  .search-filter-panel {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  }
+
+  .search-filter-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .search-filter-row.full {
+    grid-template-columns: 1fr;
+  }
+
+  .filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .filter-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #374151;
+  }
+
+  .filter-input,
+  .filter-select {
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+    transition: border-color 0.2s;
+  }
+
+  .filter-input:focus,
+  .filter-select:focus {
+    outline: none;
+    border-color: #3b82f6;
+  }
+
+  .filter-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-top: 12px;
+  }
+
+  .filter-btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .filter-btn-primary {
+    background: #3b82f6;
+    color: white;
+  }
+
+  .filter-btn-primary:hover {
+    background: #2563eb;
+  }
+
+  .filter-btn-secondary {
+    background: #f3f4f6;
+    color: #374151;
+  }
+
+  .filter-btn-secondary:hover {
+    background: #e5e7eb;
+  }
+
+  .filter-summary {
+    background: #f9fafb;
+    padding: 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #6b7280;
+    margin-top: 12px;
+  }
+
+  .filter-summary strong {
+    color: #1a1a1a;
+  }
+
+  .search-mode-toggle {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .search-mode-btn {
+    padding: 4px 12px;
+    border: 1px solid #d1d5db;
+    background: white;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .search-mode-btn.active {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+  }
+
+  .custom-date-range {
+    display: none;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 8px;
+  }
+
+  .custom-date-range.show {
+    display: grid;
+  }
+</style>
+
+<div class="search-filter-panel">
+  <div class="search-filter-row full">
+    <div class="filter-group">
+      <div class="filter-label">搜索</div>
+      <div class="search-mode-toggle">
+        <button class="search-mode-btn active" data-mode="text">文本搜索</button>
+        <button class="search-mode-btn" data-mode="regex">正则表达式</button>
+      </div>
+      <input 
+        type="text" 
+        class="filter-input" 
+        id="search-input" 
+        placeholder="输入搜索关键词..."
+      >
+    </div>
+  </div>
+
+  <div class="search-filter-row">
+    <div class="filter-group">
+      <label class="filter-label" for="time-range">时间范围</label>
+      <select class="filter-select" id="time-range">
+        <option value="all">全部</option>
+        <option value="today">今天</option>
+        <option value="yesterday">昨天</option>
+        <option value="week">最近 7 天</option>
+        <option value="month">本月</option>
+        <option value="custom">自定义</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label class="filter-label" for="status-filter">状态</label>
+      <select class="filter-select" id="status-filter">
+        <option value="all">全部</option>
+        <option value="success">成功</option>
+        <option value="failed">失败</option>
+        <option value="running">运行中</option>
+        <option value="pending">等待中</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label class="filter-label" for="type-filter">类型</label>
+      <select class="filter-select" id="type-filter">
+        <option value="all">全部</option>
+        <option value="cron">Cron</option>
+        <option value="session">Session</option>
+        <option value="error">错误</option>
+        <option value="alert">告警</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="custom-date-range" id="custom-date-range">
+    <div class="filter-group">
+      <label class="filter-label" for="date-start">开始日期</label>
+      <input type="datetime-local" class="filter-input" id="date-start">
+    </div>
+    <div class="filter-group">
+      <label class="filter-label" for="date-end">结束日期</label>
+      <input type="datetime-local" class="filter-input" id="date-end">
+    </div>
+  </div>
+
+  <div class="filter-actions">
+    <button class="filter-btn filter-btn-secondary" id="reset-filter">重置</button>
+    <button class="filter-btn filter-btn-primary" id="apply-filter">应用过滤</button>
+  </div>
+
+  <div class="filter-summary" id="filter-summary">
+    当前过滤条件: <strong>无</strong>
+  </div>
+</div>
+
+<script>
+  // 搜索过滤器实例
+  let searchFilter = new SearchFilter();
+  let searchMode = 'text';
+
+  // 搜索模式切换
+  document.querySelectorAll('.search-mode-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.search-mode-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      searchMode = btn.dataset.mode;
+      
+      const input = document.getElementById('search-input');
+      if (searchMode === 'regex') {
+        input.placeholder = '输入正则表达式...';
+      } else {
+        input.placeholder = '输入搜索关键词...';
+      }
+    });
+  });
+
+  // 时间范围切换
+  document.getElementById('time-range').addEventListener('change', (e) => {
+    const customRange = document.getElementById('custom-date-range');
+    if (e.target.value === 'custom') {
+      customRange.classList.add('show');
+    } else {
+      customRange.classList.remove('show');
+    }
+  });
+
+  // 应用过滤
+  document.getElementById('apply-filter').addEventListener('click', () => {
+    const searchText = document.getElementById('search-input').value;
+    const timeRange = document.getElementById('time-range').value;
+    const status = document.getElementById('status-filter').value;
+    const type = document.getElementById('type-filter').value;
+
+    // 重置过滤器
+    searchFilter.reset();
+
+    // 应用搜索
+    if (searchText) {
+      if (searchMode === 'regex') {
+        searchFilter.setRegex(searchText);
+      } else {
+        searchFilter.setText(searchText);
+      }
+    }
+
+    // 应用时间范围
+    if (timeRange === 'custom') {
+      const start = document.getElementById('date-start').value;
+      const end = document.getElementById('date-end').value;
+      searchFilter.setTimeRange('custom', start, end);
+    } else {
+      searchFilter.setTimeRange(timeRange);
+    }
+
+    // 应用状态和类型
+    searchFilter.setStatus(status);
+    searchFilter.setType(type);
+
+    // 更新摘要
+    document.getElementById('filter-summary').innerHTML = 
+      '当前过滤条件: <strong>' + searchFilter.getSummary() + '</strong>';
+
+    // 触发自定义事件，通知页面应用过滤
+    window.dispatchEvent(new CustomEvent('filterApplied', { 
+      detail: { filter: searchFilter } 
+    }));
+  });
+
+  // 重置过滤
+  document.getElementById('reset-filter').addEventListener('click', () => {
+    searchFilter.reset();
+    document.getElementById('search-input').value = '';
+    document.getElementById('time-range').value = 'all';
+    document.getElementById('status-filter').value = 'all';
+    document.getElementById('type-filter').value = 'all';
+    document.getElementById('date-start').value = '';
+    document.getElementById('date-end').value = '';
+    document.getElementById('custom-date-range').classList.remove('show');
+    
+    document.getElementById('filter-summary').innerHTML = 
+      '当前过滤条件: <strong>无</strong>';
+
+    // 触发重置事件
+    window.dispatchEvent(new CustomEvent('filterReset'));
+  });
+</script>

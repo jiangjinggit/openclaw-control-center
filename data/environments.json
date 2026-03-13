@@ -1,0 +1,15 @@
+{
+  "environments": [
+    {
+      "id": "local",
+      "name": "本地环境",
+      "type": "local",
+      "enabled": true,
+      "isDefault": true,
+      "description": "本地 OpenClaw 实例",
+      "config": {
+        "dataPath": "./data"
+      }
+    }
+  ]
+}

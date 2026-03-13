@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>告警配置 - OpenClaw 控制中心</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .alert-config-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .section {
+      background: white;
+      border-radius: 8px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: #1a1a1a;
+    }
+
+    .rule-card {
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      padding: 16px;
+      margin-bottom: 12px;
+      transition: all 0.2s;
+    }
+
+    .rule-card:hover {
+      border-color: #3b82f6;
+      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+    }
+
+    .rule-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .rule-name {
+      font-weight: 600;
+      font-size: 16px;
+      color: #1a1a1a;
+    }
+
+    .rule-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .toggle-switch {
+      position: relative;
+      width: 44px;
+      height: 24px;
+      background: #d1d5db;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .toggle-switch.active {
+      background: #10b981;
+    }
+
+    .toggle-switch::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 20px;
+      height: 20px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 0.3s;
+    }
+
+    .toggle-switch.active::after {
+      transform: translateX(20px);
+    }
+
+    .rule-description {
+      color: #6b7280;
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+
+    .rule-details {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      font-size: 14px;
+    }
+
+    .rule-detail {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .rule-detail-label {
+      color: #6b7280;
+      font-size: 12px;
+    }
+
+    .rule-detail-value {
+      color: #1a1a1a;
+      font-weight: 500;
+    }
+
+    .severity-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .severity-critical {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .severity-error {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .severity-warning {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    .notification-form {
+      display: grid;
+      gap: 16px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .form-label {
+      font-weight: 500;
+      color: #374151;
+      font-size: 14px;
+    }
+
+    .form-input {
+      padding: 8px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 14px;
+      transition: border-color 0.2s;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: #3b82f6;
+    }
+
+    .form-checkbox {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: #3b82f6;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #2563eb;
+    }
+
+    .btn-secondary {
+      background: #f3f4f6;
+      color: #374151;
+    }
+
+    .btn-secondary:hover {
+      background: #e5e7eb;
+    }
+
+    .btn-success {
+      background: #10b981;
+      color: white;
+    }
+
+    .btn-success:hover {
+      background: #059669;
+    }
+
+    .alert-history-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .alert-history-table th,
+    .alert-history-table td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .alert-history-table th {
+      background: #f9fafb;
+      font-weight: 600;
+      color: #374151;
+      font-size: 14px;
+    }
+
+    .alert-history-table td {
+      font-size: 14px;
+      color: #1a1a1a;
+    }
+
+    .alert-history-table tr:hover {
+      background: #f9fafb;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      color: #6b7280;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .status-indicator {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 6px;
+    }
+
+    .status-enabled {
+      background: #10b981;
+    }
+
+    .status-disabled {
+      background: #d1d5db;
+    }
+  </style>
+</head>
+<body>
+  <div class="alert-config-container">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+      <h1 style="margin: 0;">告警配置</h1>
+      <a href="/" class="btn btn-secondary">返回首页</a>
+    </div>
+
+    <!-- 告警规则 -->
+    <div class="section">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <div class="section-title">告警规则</div>
+        <button class="btn btn-success" onclick="checkAlertsNow()">立即检查</button>
+      </div>
+      <div id="rules-container"></div>
+    </div>
+
+    <!-- 通知配置 -->
+    <div class="section">
+      <div class="section-title">通知配置</div>
+      
+      <!-- Telegram -->
+      <div style="margin-bottom: 24px;">
+        <h3 style="font-size: 16px; margin-bottom: 12px;">Telegram</h3>
+        <div class="notification-form">
+          <div class="form-checkbox">
+            <input type="checkbox" id="telegram-enabled">
+            <label for="telegram-enabled">启用 Telegram 通知</label>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Bot Token</label>
+            <input type="text" class="form-input" id="telegram-token" placeholder="123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Chat ID</label>
+            <input type="text" class="form-input" id="telegram-chatid" placeholder="123456789">
+          </div>
+          <button class="btn btn-secondary" onclick="testNotification('telegram')">测试通知</button>
+        </div>
+      </div>
+
+      <!-- 飞书 -->
+      <div style="margin-bottom: 24px;">
+        <h3 style="font-size: 16px; margin-bottom: 12px;">飞书</h3>
+        <div class="notification-form">
+          <div class="form-checkbox">
+            <input type="checkbox" id="feishu-enabled">
+            <label for="feishu-enabled">启用飞书通知</label>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Webhook URL</label>
+            <input type="text" class="form-input" id="feishu-webhook" placeholder="https://open.feishu.cn/open-apis/bot/v2/hook/...">
+          </div>
+          <button class="btn btn-secondary" onclick="testNotification('feishu')">测试通知</button>
+        </div>
+      </div>
+
+      <div class="action-buttons">
+        <button class="btn btn-primary" onclick="saveNotificationConfig()">保存配置</button>
+      </div>
+    </div>
+
+    <!-- 告警历史 -->
+    <div class="section">
+      <div class="section-title">告警历史</div>
+      <div id="history-container"></div>
+    </div>
+  </div>
+
+  <script>
+    let rules = { rules: [] };
+    let notificationConfig = {};
+    let history = [];
+
+    async function loadData() {
+      try {
+        const [rulesRes, configRes, historyRes] = await Promise.all([
+          fetch('/api/alert-rules'),
+          fetch('/api/notification-config'),
+          fetch('/api/alert-history')
+        ]);
+
+        rules = await rulesRes.json();
+        notificationConfig = await configRes.json();
+        history = await historyRes.json();
+
+        renderRules();
+        renderNotificationConfig();
+        renderHistory();
+      } catch (err) {
+        console.error('Failed to load data:', err);
+      }
+    }
+
+    function renderRules() {
+      const container = document.getElementById('rules-container');
+      if (!rules.rules || rules.rules.length === 0) {
+        container.innerHTML = '<div class="empty-state">暂无告警规则</div>';
+        return;
+      }
+
+      container.innerHTML = rules.rules.map(rule => `
+        <div class="rule-card">
+          <div class="rule-header">
+            <div class="rule-name">${rule.name}</div>
+            <div class="rule-toggle">
+              <span style="font-size: 14px; color: #6b7280;">${rule.enabled ? '已启用' : '已禁用'}</span>
+              <div class="toggle-switch ${rule.enabled ? 'active' : ''}" onclick="toggleRule('${rule.id}')"></div>
+            </div>
+          </div>
+          <div class="rule-description">${rule.description}</div>
+          <div class="rule-details">
+            <div class="rule-detail">
+              <div class="rule-detail-label">类型</div>
+              <div class="rule-detail-value">${rule.type}</div>
+            </div>
+            <div class="rule-detail">
+              <div class="rule-detail-label">条件</div>
+              <div class="rule-detail-value">${rule.condition.metric} ${rule.condition.operator} ${rule.condition.threshold}</div>
+            </div>
+            <div class="rule-detail">
+              <div class="rule-detail-label">严重程度</div>
+              <div class="rule-detail-value">
+                <span class="severity-badge severity-${rule.severity}">${rule.severity}</span>
+              </div>
+            </div>
+            <div class="rule-detail">
+              <div class="rule-detail-label">通知渠道</div>
+              <div class="rule-detail-value">${rule.channels.join(', ')}</div>
+            </div>
+            <div class="rule-detail">
+              <div class="rule-detail-label">冷却时间</div>
+              <div class="rule-detail-value">${rule.cooldown}秒</div>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderNotificationConfig() {
+      // Telegram
+      document.getElementById('telegram-enabled').checked = notificationConfig.telegram?.enabled || false;
+      document.getElementById('telegram-token').value = notificationConfig.telegram?.botToken || '';
+      document.getElementById('telegram-chatid').value = notificationConfig.telegram?.chatId || '';
+
+      // 飞书
+      document.getElementById('feishu-enabled').checked = notificationConfig.feishu?.enabled || false;
+      document.getElementById('feishu-webhook').value = notificationConfig.feishu?.webhookUrl || '';
+    }
+
+    function renderHistory() {
+      const container = document.getElementById('history-container');
+      if (!history || history.length === 0) {
+        container.innerHTML = '<div class="empty-state">暂无告警历史</div>';
+        return;
+      }
+
+      const sortedHistory = [...history].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+      const recentHistory = sortedHistory.slice(0, 50);
+
+      container.innerHTML = `
+        <table class="alert-history-table">
+          <thead>
+            <tr>
+              <th>时间</th>
+              <th>规则</th>
+              <th>严重程度</th>
+              <th>当前值</th>
+              <th>阈值</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${recentHistory.map(item => `
+              <tr>
+                <td>${new Date(item.timestamp).toLocaleString('zh-CN')}</td>
+                <td>${item.ruleName}</td>
+                <td><span class="severity-badge severity-${item.severity}">${item.severity}</span></td>
+                <td>${item.currentValue !== null ? item.currentValue.toFixed(2) : '-'}</td>
+                <td>${item.threshold}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    async function toggleRule(ruleId) {
+      const rule = rules.rules.find(r => r.id === ruleId);
+      if (!rule) return;
+
+      rule.enabled = !rule.enabled;
+
+      try {
+        const res = await fetch('/api/alert-rules', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(rules)
+        });
+
+        if (res.ok) {
+          renderRules();
+        } else {
+          alert('保存失败');
+          rule.enabled = !rule.enabled;
+        }
+      } catch (err) {
+        alert('保存失败: ' + err.message);
+        rule.enabled = !rule.enabled;
+      }
+    }
+
+    async function saveNotificationConfig() {
+      notificationConfig.telegram = {
+        enabled: document.getElementById('telegram-enabled').checked,
+        botToken: document.getElementById('telegram-token').value,
+        chatId: document.getElementById('telegram-chatid').value,
+        description: 'Telegram Bot 通知'
+      };
+
+      notificationConfig.feishu = {
+        enabled: document.getElementById('feishu-enabled').checked,
+        webhookUrl: document.getElementById('feishu-webhook').value,
+        description: '飞书 Webhook 通知'
+      };
+
+      try {
+        const res = await fetch('/api/notification-config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(notificationConfig)
+        });
+
+        if (res.ok) {
+          alert('保存成功');
+        } else {
+          alert('保存失败');
+        }
+      } catch (err) {
+        alert('保存失败: ' + err.message);
+      }
+    }
+
+    async function testNotification(channel) {
+      try {
+        const res = await fetch('/api/test-notification', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            channel: channel,
+            message: '🔔 这是一条测试通知\n\n来自 OpenClaw 控制中心'
+          })
+        });
+
+        const data = await res.json();
+        if (data.ok) {
+          alert('测试通知已发送');
+        } else {
+          alert('发送失败: ' + (data.error || '未知错误'));
+        }
+      } catch (err) {
+        alert('发送失败: ' + err.message);
+      }
+    }
+
+    async function checkAlertsNow() {
+      try {
+        const res = await fetch('/api/check-alerts', {
+          method: 'POST'
+        });
+
+        const data = await res.json();
+        if (data.ok) {
+          alert('告警检查完成');
+          loadData();
+        } else {
+          alert('检查失败: ' + (data.error || '未知错误'));
+        }
+      } catch (err) {
+        alert('检查失败: ' + err.message);
+      }
+    }
+
+    // 初始加载
+    loadData();
+
+    // 定期刷新历史
+    setInterval(loadData, 30000);
+  </script>
+</body>
+</html>

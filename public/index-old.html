@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="OpenClaw Monitor Lite - 轻量 Agent Ops 控制台" />
+  <title>OpenClaw Monitor Lite - Agent Ops 控制台</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="page-shell">
+    <header class="topbar">
+      <div class="topbar-content">
+        <div class="brand-row">
+          <span class="brand-badge">OpenClaw</span>
+          <span class="brand-sub">Monitor Lite</span>
+        </div>
+        <h1>Agent 运行状态、成本、异常和节点健康一目了然</h1>
+        <p class="hero-copy">为真实运行 OpenClaw 的团队打造的轻量 Agent Ops 控制台</p>
+      </div>
+      <div class="hero-actions">
+        <a href="/cost.html" class="btn" style="text-decoration: none;">
+          <span class="btn-icon">💰</span>
+          <span>成本分析</span>
+        </a>
+        <a href="/alerts.html" class="btn" style="text-decoration: none;">
+          <span class="btn-icon">🔔</span>
+          <span>告警配置</span>
+        </a>
+        <button id="syncNow" class="btn btn-primary" type="button">
+          <span class="btn-icon">↻</span>
+          <span>立即同步</span>
+        </button>
+        <button id="exportNow" class="btn" type="button">
+          <span class="btn-icon">↓</span>
+          <span>导出数据</span>
+        </button>
+      </div>
+    </header>
+
+    <nav class="section-nav">
+      <a href="#overview">Overview</a>
+      <a href="#runs-section">Runs</a>
+      <a href="#trends-section">Trends</a>
+      <a href="#runtime-section">Runtime</a>
+      <a href="#infra-section">Infra</a>
+      <a href="#history-section">History</a>
+    </nav>
+
+    <section class="hero-grid" id="overview">
+      <article class="hero-card hero-card-primary">
+        <span class="section-kicker">Workspace</span>
+        <div class="workspace-head">
+          <div>
+            <strong id="workspaceName">-</strong>
+            <p id="workspaceMeta">-</p>
+          </div>
+          <span id="workspaceStatus" class="status-pill">-</span>
+        </div>
+        <div class="workspace-select-row">
+          <label for="projectSelect">工作区</label>
+          <select id="projectSelect"></select>
+        </div>
+        <div class="mini-stats">
+          <div><span>最后同步</span><strong id="heroLastSync">-</strong></div>
+          <div><span>数据来源</span><strong id="heroSource">-</strong></div>
+          <div><span>运行状态</span><strong id="heroRuntime">-</strong></div>
+        </div>
+      </article>
+
+      <article class="hero-card hero-card-compact">
+        <span class="section-kicker">今日重点</span>
+        <ul class="value-list compact-list">
+          <li>成本是否超出预期</li>
+          <li>失败任务是否集中出现</li>
+          <li>节点是否开始波动</li>
+          <li>同步后是否有新异常</li>
+        </ul>
+      </article>
+    </section>
+
+    <section class="kpi-grid" id="summary"></section>
+
+    <div class="section-divider"></div>
+
+    <section class="signal-grid">
+      <article class="signal-card signal-card-danger">
+        <span class="section-kicker">Priority</span>
+        <h3>当前头号风险</h3>
+        <p id="primaryRisk">-</p>
+      </article>
+      <article class="signal-card signal-card-warn">
+        <span class="section-kicker">Cost</span>
+        <h3>成本观察</h3>
+        <p id="costSignal">-</p>
+      </article>
+      <article class="signal-card signal-card-ok">
+        <span class="section-kicker">Health</span>
+        <h3>整体运行判断</h3>
+        <p id="healthSignal">-</p>
+      </article>
+    </section>
+
+    <div class="section-divider"></div>
+
+    <section class="control-row">
+      <div class="control-group">
+        <span class="control-label">任务视图</span>
+        <button id="errorOnly" class="btn btn-small" type="button">只看异常任务</button>
+      </div>
+      <div class="control-meta">
+        <span>实时视图</span>
+        <span>异常优先</span>
+      </div>
+    </section>
+
+    <section class="content-grid content-grid-top" id="runtime-section">
+      <article class="panel panel-large">
+        <div class="panel-head compact-head">
+          <div>
+            <span class="section-kicker">Operations Summary</span>
+            <h2>运行总览</h2>
+          </div>
+        </div>
+        <div id="syncStatus" class="stack-list dense-list"></div>
+      </article>
+
+      <article class="panel">
+        <div class="panel-head compact-head">
+          <div>
+            <span class="section-kicker">Runtime</span>
+            <h2>运行时状态</h2>
+          </div>
+        </div>
+        <div id="runtimeStatus" class="stack-list dense-list"></div>
+      </article>
+    </section>
+
+    <section class="content-grid" id="runs-section">
+      <article class="panel panel-large">
+        <div class="panel-head">
+          <div>
+            <span class="section-kicker">Runs</span>
+            <h2>最近任务</h2>
+          </div>
+        </div>
+        <div id="runs" class="stack-list dense-list"></div>
+      </article>
+
+      <article class="panel">
+        <div class="panel-head">
+          <div>
+            <span class="section-kicker">Alerts</span>
+            <h2>异常提醒</h2>
+          </div>
+        </div>
+        <div id="alerts" class="stack-list dense-list"></div>
+      </article>
+    </section>
+
+    <section class="content-grid" id="trends-section">
+      <div class="panel panel-large">
+        <div class="panel-head">
+          <div>
+            <span class="section-kicker">Trends</span>
+            <h2>趋势概览</h2>
+          </div>
+        </div>
+        <div class="chart-grid">
+          <div class="chart-card">
+            <h3>平均延迟 (ms)</h3>
+            <div id="latencyChart" class="chart"></div>
+          </div>
+          <div class="chart-card">
+            <h3>成功率 (%)</h3>
+            <div id="successChart" class="chart"></div>
+          </div>
+          <div class="chart-card">
+            <h3>成本趋势 (¥)</h3>
+            <div id="costChart" class="chart"></div>
+          </div>
+          <div class="chart-card">
+            <h3>失败次数</h3>
+            <div id="failureChart" class="chart"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <div>
+            <span class="section-kicker">Probe</span>
+            <h2>数据探针</h2>
+          </div>
+        </div>
+        <div id="probe" class="stack-list dense-list"></div>
+      </div>
+    </section>
+
+    <section class="three-col-grid" id="infra-section">
+      <article class="panel">
+        <div class="panel-head">
+          <div>
+            <span class="section-kicker">Cron Jobs</span>
+            <h2>定时任务</h2>
+          </div>
+        </div>
+        <div id="cronReal" class="entity-grid"></div>
+      </article>
+      <article class="panel">
+        <div class="panel-head">
+          <div>
+            <span class="section-kicker">Sessions</span>
+            <h2>会话快照</h2>
+          </div>
+        </div>
+        <div id="sessionsReal" class="entity-grid"></div>
+      </article>
+      <article class="panel">
+        <div class="panel-head">
+          <div>
+            <span class="section-kicker">Errors</span>
+            <h2>错误聚合</h2>
+          </div>
+        </div>
+        <div id="errorsReal" class="stack-list dense-list"></div>
+      </article>
+    </section>
+
+    <section class="three-col-grid">
+      <article class="panel">
+        <div class="panel-head">
+          <div>
+            <span class="section-kicker">Jobs</span>
+            <h2>任务配置</h2>
+          </div>
+        </div>
+        <div id="jobs" class="entity-grid"></div>
+      </article>
+      <article class="panel">
+        <div class="panel-head">
+          <div>
+            <span class="section-kicker">Nodes</span>
+            <h2>节点状态</h2>
+          </div>
+        </div>
+        <div id="nodes" class="entity-grid"></div>
+      </article>
+      <article class="panel">
+        <div class="panel-head">
+          <div>
+            <span class="section-kicker">Adapters</span>
+            <h2>适配器</h2>
+          </div>
+        </div>
+        <div id="adapters" class="entity-grid"></div>
+      </article>
+    </section>
+
+    <section class="content-grid" id="history-section">
+      <article class="panel">
+        <div class="panel-head">
+          <div>
+            <span class="section-kicker">Sync History</span>
+            <h2>同步日志</h2>
+          </div>
+        </div>
+        <div id="syncLog" class="stack-list dense-list"></div>
+      </article>
+      <article class="panel">
+        <div class="panel-head">
+          <div>
+            <span class="section-kicker">Exports</span>
+            <h2>导出记录</h2>
+          </div>
+        </div>
+        <div id="exportLog" class="stack-list dense-list"></div>
+      </article>
+    </section>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

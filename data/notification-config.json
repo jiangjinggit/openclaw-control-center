@@ -1,0 +1,30 @@
+{
+  "telegram": {
+    "enabled": false,
+    "botToken": "",
+    "chatId": "",
+    "description": "Telegram Bot 通知"
+  },
+  "feishu": {
+    "enabled": false,
+    "webhookUrl": "",
+    "description": "飞书 Webhook 通知"
+  },
+  "email": {
+    "enabled": false,
+    "smtpHost": "",
+    "smtpPort": 587,
+    "smtpUser": "",
+    "smtpPass": "",
+    "from": "",
+    "to": [],
+    "description": "邮件通知"
+  },
+  "webhook": {
+    "enabled": false,
+    "url": "",
+    "method": "POST",
+    "headers": {},
+    "description": "自定义 Webhook 通知"
+  }
+}

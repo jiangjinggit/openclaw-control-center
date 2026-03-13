@@ -1,0 +1,22 @@
+node_modules/
+.env
+.DS_Store
+*.log
+.runtime/
+exports/
+
+# Runtime data files
+data/*-real.json
+data/sync-log.json
+data/sync-status.json
+data/runtime.json
+data/cost-breakdown.json
+data/cost-trends.json
+data/alert-history.json
+data/metrics.json
+data/series.json
+data/cost-series.json
+data/projects.json
+data/jobs.json
+data/adapters.json
+data/envs/

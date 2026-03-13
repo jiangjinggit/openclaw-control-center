@@ -1,0 +1,14 @@
+{
+  "name": "openclaw-control-center",
+  "version": "0.1.0",
+  "private": true,
+  "description": "外挂式 OpenClaw 图形化增强控制台",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "sync": "node scripts/sync-real-data.js",
+    "cost": "node scripts/analyze-cost.js",
+    "alerts": "node scripts/check-alerts.js"
+  },
+  "license": "MIT"
+}

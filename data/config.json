@@ -1,0 +1,6 @@
+{
+  "syncIntervalMs": 3600000,
+  "sessionActiveMinutes": 1440,
+  "maxSessions": 50,
+  "source": "openclaw-cli"
+}

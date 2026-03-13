@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>日志中心 - OpenClaw 控制中心</title>
+  <style>
+    body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;background:#f5f7fb;margin:0;color:#111827}
+    .wrap{max-width:1200px;margin:0 auto;padding:24px}
+    .top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+    .btn{border:1px solid #dbe1ea;background:#fff;border-radius:10px;padding:9px 14px;text-decoration:none;color:#334155;cursor:pointer}
+    .panel{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:20px;margin-bottom:16px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:16px}
+    .stat{background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:14px}
+    .label{font-size:12px;color:#64748b;display:block;margin-bottom:8px}
+    .value{font-size:24px;font-weight:700}
+    .toolbar{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+    .search{flex:1;min-width:240px;border:1px solid #dbe1ea;border-radius:10px;padding:10px 12px;font-size:14px}
+    .tabs{display:flex;gap:8px;flex-wrap:wrap}
+    .tab{border:1px solid #dbe1ea;background:#fff;border-radius:999px;padding:8px 12px;cursor:pointer;color:#475569;font-size:14px}
+    .tab.active{background:#111827;color:#fff;border-color:#111827}
+    .list{display:flex;flex-direction:column;gap:12px}
+    .log-item{padding:16px;border:1px solid #e2e8f0;border-radius:14px;background:#fff}
+    .log-item.error{border-color:#fca5a5;background:#fef2f2}
+    .log-item.warn{border-color:#fbbf24;background:#fffbeb}
+    .log-header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:8px}
+    .log-title{font-weight:600;font-size:14px}
+    .log-time{font-size:12px;color:#64748b}
+    .log-body{font-size:13px;color:#374151;line-height:1.6;word-break:break-word}
+    .log-meta{font-size:12px;color:#64748b;margin-top:8px}
+    .pill{padding:4px 10px;border-radius:999px;font-size:12px;font-weight:600;display:inline-block}
+    .error-pill{background:#fee2e2;color:#991b1b}
+    .warn-pill{background:#fef3c7;color:#92400e}
+    .info-pill{background:#dbeafe;color:#1e40af}
+    .empty{color:#94a3b8;padding:20px 0;text-align:center}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <h1>日志中心</h1>
+        <div class="label">查看最近的日志、错误与异常记录</div>
+      </div>
+      <div>
+        <button class="btn" id="syncBtn">立即同步</button>
+        <a class="btn" href="/">返回首页</a>
+      </div>
+    </div>
+
+    <div class="stats" id="stats"></div>
+
+    <div class="panel">
+      <div class="toolbar">
+        <input id="search" class="search" placeholder="搜索日志内容、任务名或错误信息">
+        <div class="tabs" id="tabs"></div>
+      </div>
+      <div class="list" id="list">加载中...</div>
+    </div>
+  </div>
+
+  <script>
+    let items = [];
+    let activeTab = 'all';
+    const tabs = [
+      ['all', '全部'],
+      ['error', '错误'],
+      ['warn', '警告'],
+      ['cron', '定时任务'],
+      ['session', '会话']
+    ];
+
+    function fmt(n) {
+      return Number(n || 0).toLocaleString('zh-CN');
+    }
+
+    function fmtTime(t) {
+      return t ? new Date(t).toLocaleString('zh-CN', { hour12: false }) : '未知';
+    }
+
+    function renderStats() {
+      const errors = items.filter(i => i.level === 'error').length;
+      const warns = items.filter(i => i.level === 'warn').length;
+      const cronLogs = items.filter(i => i.source === 'cron').length;
+      const sessionLogs = items.filter(i => i.source === 'session').length;
+
+      document.getElementById('stats').innerHTML = [
+        ['总日志数', items.length],
+        ['错误', errors],
+        ['警告', warns],
+        ['定时任务日志', cronLogs],
+        ['会话日志', sessionLogs]
+      ].map(([l, v]) => `<div class="stat"><span class="label">${l}</span><div class="value">${fmt(v)}</div></div>`).join('');
+    }
+
+    function renderTabs() {
+      document.getElementById('tabs').innerHTML = tabs.map(([k, l]) => 
+        `<button class="tab ${activeTab === k ? 'active' : ''}" data-tab="${k}">${l}</button>`
+      ).join('');
+      document.querySelectorAll('[data-tab]').forEach(el => 
+        el.onclick = () => { activeTab = el.dataset.tab; render(); }
+      );
+    }
+
+    function getFiltered() {
+      const q = document.getElementById('search').value.trim().toLowerCase();
+      return items.filter(i => {
+        const tabHit = activeTab === 'all' || 
+          (activeTab === 'error' && i.level === 'error') ||
+          (activeTab === 'warn' && i.level === 'warn') ||
+          (activeTab === 'cron' && i.source === 'cron') ||
+          (activeTab === 'session' && i.source === 'session');
+        const text = [i.message, i.jobName, i.sessionKey, i.error].join(' ').toLowerCase();
+        return tabHit && (!q || text.includes(q));
+      });
+    }
+
+    function render() {
+      renderTabs();
+      renderStats();
+      const list = getFiltered();
+      document.getElementById('list').innerHTML = list.length ? list.map(i => `
+        <div class="log-item ${i.level || ''}">
+          <div class="log-header">
+            <div>
+              <span class="log-title">${i.jobName || i.sessionKey || '系统日志'}</span>
+              ${i.level === 'error' ? '<span class="pill error-pill">错误</span>' : ''}
+              ${i.level === 'warn' ? '<span class="pill warn-pill">警告</span>' : ''}
+              ${i.level === 'info' ? '<span class="pill info-pill">信息</span>' : ''}
+            </div>
+            <div class="log-time">${fmtTime(i.timestamp)}</div>
+          </div>
+          <div class="log-body">${i.message || i.error || '无详细信息'}</div>
+          <div class="log-meta">来源：${i.source || 'unknown'} ${i.jobId ? `· 任务 ID：${i.jobId}` : ''} ${i.sessionKey ? `· 会话：${i.sessionKey}` : ''}</div>
+        </div>
+      `).join('') : '<div class="empty">当前筛选条件下没有日志</div>';
+    }
+
+    async function load() {
+      try {
+        const [errors, syncStatus, cronJobs] = await Promise.all([
+          fetch('/api/errors-real').then(r => r.json()).catch(() => ({ jobs: [] })),
+          fetch('/api/sync-status').then(r => r.json()).catch(() => ({})),
+          fetch('/api/cron-real').then(r => r.json()).catch(() => [])
+        ]);
+
+        items = [];
+
+        if (errors.jobs && errors.jobs.length) {
+          errors.jobs.forEach(job => {
+            items.push({
+              level: 'error',
+              source: 'cron',
+              jobName: job.name,
+              jobId: job.id,
+              message: job.error || '任务执行失败',
+              error: job.error,
+              timestamp: job.lastRunAt || job.nextRunAt
+            });
+          });
+        }
+
+        if (syncStatus.lastError) {
+          items.push({
+            level: 'error',
+            source: 'sync',
+            message: syncStatus.lastError,
+            timestamp: syncStatus.lastSyncAt
+          });
+        }
+
+        cronJobs.forEach(job => {
+          if (job.lastStatus === 'error') {
+            items.push({
+              level: 'error',
+              source: 'cron',
+              jobName: job.name,
+              jobId: job.id,
+              message: job.lastError || '任务执行失败',
+              timestamp: job.lastRunAt
+            });
+          }
+        });
+
+        items.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
+        render();
+      } catch (err) {
+        console.error('加载失败', err);
+        document.getElementById('list').innerHTML = '<div class="empty">加载失败，请检查服务状态</div>';
+      }
+    }
+
+    document.getElementById('search').addEventListener('input', render);
+    document.getElementById('syncBtn').addEventListener('click', async () => {
+      const btn = document.getElementById('syncBtn');
+      btn.disabled = true;
+      btn.textContent = '同步中...';
+      await fetch('/api/sync-now', { method: 'POST' });
+      await load();
+      btn.disabled = false;
+      btn.textContent = '立即同步';
+    });
+
+    load();
+  </script>
+</body>
+</html>

@@ -1,0 +1,64 @@
+{
+  "rules": [
+    {
+      "id": "cost-daily-limit",
+      "name": "日成本超限",
+      "description": "当日成本超过设定阈值时触发告警",
+      "type": "cost",
+      "condition": {
+        "metric": "daily_cost",
+        "operator": ">",
+        "threshold": 100
+      },
+      "enabled": true,
+      "channels": ["telegram"],
+      "severity": "warning",
+      "cooldown": 3600
+    },
+    {
+      "id": "error-rate-high",
+      "name": "错误率过高",
+      "description": "错误率超过20%时触发告警",
+      "type": "error_rate",
+      "condition": {
+        "metric": "error_rate",
+        "operator": ">",
+        "threshold": 0.2
+      },
+      "enabled": true,
+      "channels": ["telegram"],
+      "severity": "error",
+      "cooldown": 1800
+    },
+    {
+      "id": "cron-consecutive-failures",
+      "name": "Cron连续失败",
+      "description": "Cron任务连续失败3次时触发告警",
+      "type": "cron_failure",
+      "condition": {
+        "metric": "consecutive_failures",
+        "operator": ">=",
+        "threshold": 3
+      },
+      "enabled": true,
+      "channels": ["telegram"],
+      "severity": "critical",
+      "cooldown": 600
+    },
+    {
+      "id": "session-timeout",
+      "name": "Session超时",
+      "description": "Session运行时间超过1小时时触发告警",
+      "type": "session_timeout",
+      "condition": {
+        "metric": "session_duration",
+        "operator": ">",
+        "threshold": 3600
+      },
+      "enabled": false,
+      "channels": ["telegram"],
+      "severity": "warning",
+      "cooldown": 1800
+    }
+  ]
+}
