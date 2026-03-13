@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>定时任务管理 - OpenClaw 控制中心</title>
+  <style>
+    body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;background:#f5f7fb;margin:0;color:#111827}
+    .wrap{max-width:1280px;margin:0 auto;padding:24px}
+    .top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:20px;flex-wrap:wrap}
+    .btn{border:1px solid #dbe1ea;background:#fff;border-radius:10px;padding:9px 14px;text-decoration:none;color:#334155;cursor:pointer}
+    .btn:disabled{opacity:.6;cursor:not-allowed}
+    .panel{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:20px}
+    .toolbar{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+    .search{flex:1;min-width:240px;border:1px solid #dbe1ea;border-radius:10px;padding:10px 12px;font-size:14px}
+    .tabs{display:flex;gap:8px;flex-wrap:wrap}
+    .tab{border:1px solid #dbe1ea;background:#fff;border-radius:999px;padding:8px 12px;cursor:pointer;color:#475569}
+    .tab.active{background:#111827;color:#fff;border-color:#111827}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:16px}
+    .stat{background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:14px}
+    .stat .label{font-size:12px;color:#64748b;display:block;margin-bottom:8px}
+    .stat .value{font-size:24px;font-weight:700}
+    .list{display:flex;flex-direction:column;gap:12px}
+    .row{border:1px solid #e2e8f0;border-radius:16px;padding:16px;background:#fff}
+    .row-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap}
+    .title{font-weight:700;font-size:16px}
+    .meta{font-size:12px;color:#64748b;margin-top:6px;word-break:break-all}
+    .pill{padding:4px 10px;border-radius:999px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:6px}
+    .ok{background:#dcfce7;color:#166534}.err{background:#fee2e2;color:#991b1b}.warn{background:#fef3c7;color:#92400e}.info{background:#dbeafe;color:#1d4ed8}.off{background:#e5e7eb;color:#475569}
+    .right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+    .link-btn{border:none;background:none;padding:0;color:#2563eb;cursor:pointer;font-size:13px}
+    .detail{display:none;margin-top:16px;padding-top:16px;border-top:1px dashed #e2e8f0}
+    .detail.open{display:block}
+    .detail-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-bottom:12px}
+    .card{background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:14px}
+    .card-title{font-size:13px;color:#64748b;margin-bottom:8px}
+    .card-value{font-size:22px;font-weight:700}
+    .sublist{display:flex;flex-direction:column;gap:10px}
+    .subrow{padding:12px;border:1px solid #e2e8f0;border-radius:12px;background:#fff}
+    .subrow .meta{margin-top:4px}
+    .empty{color:#94a3b8;padding:24px 0}
+    .action-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .inline-btn{border:1px solid #dbe1ea;background:#fff;border-radius:10px;padding:8px 12px;cursor:pointer;color:#334155}
+    .inline-btn.primary{background:#111827;color:#fff;border-color:#111827}
+    .inline-btn.warn{background:#fff7ed;border-color:#fdba74;color:#9a3412}
+    .inline-btn:disabled{opacity:.6;cursor:not-allowed}
+    .toast{position:fixed;right:20px;bottom:20px;z-index:20;background:#111827;color:#fff;padding:12px 14px;border-radius:12px;box-shadow:0 8px 24px rgba(15,23,42,.24);display:none;max-width:360px}
+    .toast.show{display:block}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <h1>定时任务管理</h1>
+        <div class="meta">优先看运行状态、最近执行强度和关联会话。已支持手动执行、启用/禁用和最近运行历史。</div>
+      </div>
+      <div>
+        <button class="btn" id="syncBtn">立即同步</button>
+        <a class="btn" href="/">返回首页</a>
+      </div>
+    </div>
+
+    <div class="stats" id="stats"></div>
+
+    <div class="panel">
+      <div class="toolbar">
+        <input id="searchInput" class="search" placeholder="搜索任务名、Agent 或 schedule">
+        <div class="tabs" id="tabs"></div>
+      </div>
+      <div class="list" id="list">加载中...</div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    let jobs = [];
+    let activeTab = 'all';
+    const detailCache = new Map();
+    const runsCache = new Map();
+
+    function statusBadge(s){
+      s=String(s||'').toLowerCase();
+      if(s==='ok') return ['ok','正常'];
+      if(s==='error') return ['err','失败'];
+      return ['warn','待确认'];
+    }
+    function fmt(ms){
+      if(!ms) return '未知';
+      const ts = Number(ms);
+      return new Date(ts > 1e12 ? ts : ms).toLocaleString('zh-CN',{hour12:false});
+    }
+    function fmtNum(v){ return Number(v || 0).toLocaleString('zh-CN'); }
+    function showToast(message, isError = false){
+      const el = document.getElementById('toast');
+      el.textContent = message;
+      el.style.background = isError ? '#991b1b' : '#111827';
+      el.classList.add('show');
+      clearTimeout(showToast._timer);
+      showToast._timer = setTimeout(() => el.classList.remove('show'), 2600);
+    }
+    function parseCronMeta(job){
+      const sessions = (job._detail && job._detail.aggregate) || {};
+      const tokenLine = sessions.runCount ? `近 ${sessions.runCount} 次运行 · 累计 ${fmtNum(sessions.totalTokens)} Tokens` : '暂无关联运行会话';
+      return [
+        `执行规则：${job.schedule || '未配置'}`,
+        `下次运行：${fmt(job.nextRunAtMs)}`,
+        `任务 ID：${job.id}`,
+        tokenLine
+      ];
+    }
+    function renderStats(list){
+      const enabled = list.filter(j => j.enabled).length;
+      const ok = list.filter(j => String(j.lastStatus).toLowerCase() === 'ok').length;
+      const err = list.filter(j => String(j.lastStatus).toLowerCase() === 'error').length;
+      const running = list.filter(j => j.state?.runningAtMs).length;
+      const unknown = list.length - ok - err;
+      document.getElementById('stats').innerHTML = [
+        ['任务总数', list.length],
+        ['已启用', enabled],
+        ['运行中', running],
+        ['正常', ok],
+        ['待确认/未知', unknown || 0],
+        ['失败', err]
+      ].map(([label, value]) => `<div class="stat"><span class="label">${label}</span><div class="value">${fmtNum(value)}</div></div>`).join('');
+    }
+    function renderTabs(){
+      const items = [
+        ['all','全部'],
+        ['ok','正常'],
+        ['warn','待确认'],
+        ['error','失败'],
+        ['disabled','未启用']
+      ];
+      document.getElementById('tabs').innerHTML = items.map(([key,label]) => `<button class="tab ${activeTab===key?'active':''}" data-tab="${key}">${label}</button>`).join('');
+      document.querySelectorAll('[data-tab]').forEach(el => el.onclick = () => { activeTab = el.dataset.tab; renderList(); renderTabs(); });
+    }
+    function getFiltered(){
+      const q = document.getElementById('searchInput').value.trim().toLowerCase();
+      return jobs.filter(job => {
+        const status = String(job.lastStatus || '').toLowerCase();
+        const tabHit = activeTab === 'all'
+          || (activeTab === 'warn' ? !['ok','error'].includes(status) && job.enabled : status === activeTab)
+          || (activeTab === 'disabled' ? !job.enabled : false);
+        const text = [job.name, job.schedule, job.id, job.agentId || ''].join(' ').toLowerCase();
+        return tabHit && (!q || text.includes(q));
+      });
+    }
+    function renderRuns(runs){
+      if(!runs.length) return '<div class="meta">暂无最近运行历史</div>';
+      return runs.map(run => `
+        <div class="subrow">
+          <div><strong>${run.status === 'ok' ? '运行成功' : '运行失败'}</strong></div>
+          <div class="meta">触发时间：${fmt(run.runAtMs || run.ts)} · 持续 ${fmtNum(run.durationMs || 0)} ms · 投递 ${run.deliveryStatus || (run.delivered ? 'delivered' : 'unknown')}</div>
+          <div class="meta">模型：${run.model || 'unknown'}${run.provider ? ` / ${run.provider}` : ''}${run.sessionKey ? ` · <a href="/session-detail.html?key=${encodeURIComponent(run.sessionKey)}">进入本次会话</a>` : ''}</div>
+          <div class="meta">Tokens：${fmtNum(run.usage?.total_tokens || 0)}（输入 ${fmtNum(run.usage?.input_tokens || 0)} / 输出 ${fmtNum(run.usage?.output_tokens || 0)}）</div>
+          ${run.error ? `<div class="meta" style="color:#991b1b">错误：${run.error}</div>` : ''}
+        </div>
+      `).join('');
+    }
+    function renderDetail(job, detail, runEntries){
+      const box = document.getElementById(`detail-${job.id}`);
+      const agg = detail.aggregate || {};
+      const current = detail.currentSession;
+      box.innerHTML = `
+        <div class="detail-grid">
+          <div class="card"><div class="card-title">最近运行次数</div><div class="card-value">${fmtNum(agg.runCount)}</div></div>
+          <div class="card"><div class="card-title">累计 Tokens</div><div class="card-value">${fmtNum(agg.totalTokens)}</div></div>
+          <div class="card"><div class="card-title">平均每次 Tokens</div><div class="card-value">${fmtNum(agg.avgTokensPerRun)}</div></div>
+          <div class="card"><div class="card-title">最近活跃</div><div class="card-value" style="font-size:16px">${fmt(agg.latestUpdatedAt)}</div></div>
+        </div>
+        <div class="detail-grid">
+          <div class="card">
+            <div class="card-title">当前主会话</div>
+            ${current ? `
+              <div class="meta">模型：${current.model}</div>
+              <div class="meta">总 Tokens：${fmtNum(current.totalTokens)}</div>
+              <div class="meta">最后活跃：${fmt(current.updatedAt)}</div>
+              <div class="meta"><a href="/session-detail.html?key=${encodeURIComponent(current.key)}">进入会话详情</a></div>
+            ` : '<div class="meta">暂无主会话索引</div>'}
+          </div>
+          <div class="card">
+            <div class="card-title">异常与状态</div>
+            <div class="meta">当前状态：${job.lastStatus || 'unknown'}</div>
+            <div class="meta">模型：${(agg.models||[]).join(' / ') || 'unknown'}</div>
+            <div class="meta">错误聚合：${detail.errorSummary ? detail.errorSummary.lastStatus : '当前未命中异常记录'}</div>
+            <div class="meta">本地状态：${job.enabled ? '已启用' : '未启用'}${job.state?.runningAtMs ? ` · 正在运行（${fmt(job.state.runningAtMs)}）` : ''}</div>
+          </div>
+        </div>
+        <div class="detail-grid">
+          <div class="card">
+            <div class="card-title">最近运行记录</div>
+            <div class="sublist">
+              ${(detail.recentRuns || []).length ? detail.recentRuns.map(run => `
+                <div class="subrow">
+                  <div><strong>${run.runId || '无 runId'}</strong></div>
+                  <div class="meta">${fmt(run.updatedAt)} · ${run.model}</div>
+                  <div class="meta">输入 ${fmtNum(run.inputTokens)} / 输出 ${fmtNum(run.outputTokens)} / 总 ${fmtNum(run.totalTokens)}</div>
+                </div>
+              `).join('') : '<div class="meta">暂无最近运行记录</div>'}
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">CLI 运行历史（最近 5 次）</div>
+            <div class="sublist">${renderRuns(runEntries)}</div>
+          </div>
+        </div>
+        <div class="detail-grid">
+          <div class="card">
+            <div class="card-title">最近同步历史</div>
+            <div class="sublist">
+              ${(detail.statusHistory || []).length ? detail.statusHistory.slice(0,5).map(item => `
+                <div class="subrow">
+                  <div><strong>${item.status}</strong></div>
+                  <div class="meta">${item.at}</div>
+                  <div class="meta">同步时采集到 ${fmtNum(item.sessionCount)} sessions / ${fmtNum(item.errorCount)} errors</div>
+                </div>
+              `).join('') : '<div class="meta">暂无同步历史</div>'}
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">快捷操作</div>
+            <div class="action-row">
+              <button class="inline-btn primary" data-run="${job.id}">立即执行一次</button>
+              ${job.enabled
+                ? `<button class="inline-btn warn" data-disable="${job.id}">停用任务</button>`
+                : `<button class="inline-btn" data-enable="${job.id}">启用任务</button>`}
+            </div>
+            <div class="meta">这些动作直接调用本机 `openclaw cron` CLI，不是前端假状态。</div>
+          </div>
+        </div>
+      `;
+      box.classList.add('open');
+      bindRowActions();
+    }
+    async function fetchDetail(jobId){
+      if(!detailCache.has(jobId)){
+        const res = await fetch(`/api/cron-detail?id=${encodeURIComponent(jobId)}`);
+        const data = await res.json();
+        if(!res.ok || !data.ok) throw new Error(data.error || '详情加载失败');
+        detailCache.set(jobId, data);
+      }
+      return detailCache.get(jobId);
+    }
+    async function fetchRuns(jobId){
+      if(!runsCache.has(jobId)){
+        const res = await fetch(`/api/cron-runs?id=${encodeURIComponent(jobId)}&limit=5`);
+        const data = await res.json();
+        if(!res.ok || !data.ok) throw new Error(data.error || '运行历史加载失败');
+        runsCache.set(jobId, data.entries || []);
+      }
+      return runsCache.get(jobId);
+    }
+    async function toggleDetail(jobId){
+      const box = document.getElementById(`detail-${jobId}`);
+      if(box.classList.contains('open')){
+        box.classList.remove('open');
+        return;
+      }
+      box.innerHTML = '<div class="meta">加载详情中...</div>';
+      box.classList.add('open');
+      try{
+        const [detail, runs] = await Promise.all([fetchDetail(jobId), fetchRuns(jobId)]);
+        const job = jobs.find(item => item.id === jobId);
+        renderDetail(job, detail, runs);
+      }catch(err){
+        box.innerHTML = `<div class="meta">${err.message || '详情加载失败'}</div>`;
+      }
+    }
+    function renderList(){
+      const list = getFiltered();
+      renderStats(list);
+      document.getElementById('list').innerHTML = list.length ? list.map(job => {
+        const [cls,text] = statusBadge(job.lastStatus);
+        const agentId = job.agentId || (job._detail && job._detail.currentSession && job._detail.currentSession.key.split(':')[1]) || 'unknown';
+        const enabledPill = job.enabled ? `<span class="pill info">已启用</span>` : `<span class="pill off">未启用</span>`;
+        const runningPill = job.state?.runningAtMs ? `<span class="pill warn">运行中</span>` : '';
+        return `
+          <div class="row">
+            <div class="row-head">
+              <div>
+                <div class="title">${job.name}</div>
+                ${parseCronMeta(job).map(line => `<div class="meta">${line}</div>`).join('')}
+                <div class="meta">Agent：${agentId}${job.state?.lastDurationMs ? ` · 上次耗时 ${fmtNum(job.state.lastDurationMs)} ms` : ''}${job.state?.consecutiveErrors ? ` · 连续错误 ${fmtNum(job.state.consecutiveErrors)}` : ''}</div>
+              </div>
+              <div class="right">
+                ${enabledPill}
+                ${runningPill}
+                <span class="pill ${cls}">${text}</span>
+                <button class="link-btn" data-detail="${job.id}">查看运行详情</button>
+              </div>
+            </div>
+            <div class="action-row">
+              <button class="inline-btn primary" data-run="${job.id}">立即执行一次</button>
+              ${job.enabled
+                ? `<button class="inline-btn warn" data-disable="${job.id}">停用任务</button>`
+                : `<button class="inline-btn" data-enable="${job.id}">启用任务</button>`}
+            </div>
+            <div class="detail" id="detail-${job.id}"></div>
+          </div>
+        `;
+      }).join('') : '<div class="empty">当前筛选条件下暂无定时任务</div>';
+      document.querySelectorAll('[data-detail]').forEach(el => el.onclick = () => toggleDetail(el.dataset.detail));
+      bindRowActions();
+    }
+    function bindRowActions(){
+      document.querySelectorAll('[data-run]').forEach(el => el.onclick = () => handleAction('run', el.dataset.run, el));
+      document.querySelectorAll('[data-enable]').forEach(el => el.onclick = () => handleAction('enable', el.dataset.enable, el));
+      document.querySelectorAll('[data-disable]').forEach(el => el.onclick = () => handleAction('disable', el.dataset.disable, el));
+    }
+    async function handleAction(action, jobId, btn){
+      const labels = { run:'执行中...', enable:'启用中...', disable:'停用中...' };
+      const endpoint = { run:'cron-run', enable:'cron-enable', disable:'cron-disable' }[action];
+      const original = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = labels[action] || '处理中...';
+      try{
+        const res = await fetch(`/api/${endpoint}?id=${encodeURIComponent(jobId)}`, { method:'POST' });
+        const data = await res.json();
+        if(!res.ok || !data.ok) throw new Error(data.error || '操作失败');
+        showToast(action === 'run' ? '已触发任务执行' : action === 'enable' ? '任务已启用' : '任务已停用');
+        detailCache.delete(jobId);
+        runsCache.delete(jobId);
+        await load();
+      }catch(err){
+        showToast(err.message || '操作失败', true);
+      }finally{
+        btn.disabled = false;
+        btn.textContent = original;
+      }
+    }
+    async function warmupDetails(){
+      await Promise.all(jobs.slice(0, 6).map(async job => {
+        try{
+          const detail = await fetchDetail(job.id);
+          job._detail = detail;
+          job.agentId = detail.currentSession?.key?.split(':')[1] || 'unknown';
+        }catch{}
+      }));
+    }
+    async function load(){
+      jobs = await fetch('/api/cron-real').then(r => r.json());
+      jobs = jobs.map(job => ({ ...job, state: job.state || {} }));
+      await warmupDetails();
+      renderTabs();
+      renderList();
+    }
+    document.getElementById('searchInput').addEventListener('input', renderList);
+    document.getElementById('syncBtn').addEventListener('click', async () => {
+      const btn = document.getElementById('syncBtn');
+      btn.disabled = true;
+      btn.textContent = '同步中...';
+      await fetch('/api/sync-now', { method:'POST' });
+      detailCache.clear();
+      runsCache.clear();
+      await load();
+      btn.disabled = false;
+      btn.textContent = '立即同步';
+    });
+    load();
+  </script>
+</body>
+</html>
