@@ -786,6 +786,60 @@ http.createServer((req, res) => {
     return;
   }
 
+  // Cron 操作 API
+  if (url.pathname === '/api/cron/toggle' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+      try {
+        const { jobId, enabled } = JSON.parse(body);
+        execFile('openclaw', ['cron', 'update', jobId, '--enabled', enabled ? 'true' : 'false'], (err, stdout, stderr) => {
+          if (err) return send(res, 500, JSON.stringify({ ok: false, error: stderr || err.message }), 'application/json; charset=utf-8');
+          triggerSync('manual', () => {});
+          return send(res, 200, JSON.stringify({ ok: true }), 'application/json; charset=utf-8');
+        });
+      } catch (err) {
+        return send(res, 400, JSON.stringify({ ok: false, error: err.message }), 'application/json; charset=utf-8');
+      }
+    });
+    return;
+  }
+
+  if (url.pathname === '/api/cron/run' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+      try {
+        const { jobId } = JSON.parse(body);
+        execFile('openclaw', ['cron', 'run', jobId], (err, stdout, stderr) => {
+          if (err) return send(res, 500, JSON.stringify({ ok: false, error: stderr || err.message }), 'application/json; charset=utf-8');
+          return send(res, 200, JSON.stringify({ ok: true, output: stdout.trim() }), 'application/json; charset=utf-8');
+        });
+      } catch (err) {
+        return send(res, 400, JSON.stringify({ ok: false, error: err.message }), 'application/json; charset=utf-8');
+      }
+    });
+    return;
+  }
+
+  if (url.pathname === '/api/cron/delete' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+      try {
+        const { jobId } = JSON.parse(body);
+        execFile('openclaw', ['cron', 'remove', jobId], (err, stdout, stderr) => {
+          if (err) return send(res, 500, JSON.stringify({ ok: false, error: stderr || err.message }), 'application/json; charset=utf-8');
+          triggerSync('manual', () => {});
+          return send(res, 200, JSON.stringify({ ok: true }), 'application/json; charset=utf-8');
+        });
+      } catch (err) {
+        return send(res, 400, JSON.stringify({ ok: false, error: err.message }), 'application/json; charset=utf-8');
+      }
+    });
+    return;
+  }
+
   if (url.pathname === '/api/live/openclaw' && req.method === 'GET') {
     Promise.all([
       fetch('http://127.0.0.1:3000/health').then(r => r.text()).catch(() => 'unavailable')

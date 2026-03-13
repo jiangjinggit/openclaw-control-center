@@ -392,6 +392,9 @@
             </div>
             <div class="task-actions">
               ${getStatusBadge(task)}
+              <button class="btn" onclick="toggleTask('${task.id}', ${!task.enabled})">${task.enabled ? '禁用' : '启用'}</button>
+              <button class="btn" onclick="runTask('${task.id}')">立即运行</button>
+              <button class="btn" onclick="deleteTask('${task.id}')" style="color: var(--error)">删除</button>
             </div>
           </div>
         </div>
@@ -429,6 +432,63 @@
       await loadTasks();
       btn.disabled = false;
       btn.textContent = '立即同步';
+    };
+
+    // 操作函数
+    window.toggleTask = async (jobId, enabled) => {
+      if (!confirm(`确定要${enabled ? '启用' : '禁用'}此任务吗？`)) return;
+      try {
+        const res = await fetch('/api/cron/toggle', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ jobId, enabled })
+        });
+        if (res.ok) {
+          await loadTasks();
+          alert('操作成功');
+        } else {
+          alert('操作失败');
+        }
+      } catch (err) {
+        alert('操作失败：' + err.message);
+      }
+    };
+
+    window.runTask = async (jobId) => {
+      if (!confirm('确定要立即运行此任务吗？')) return;
+      try {
+        const res = await fetch('/api/cron/run', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ jobId })
+        });
+        if (res.ok) {
+          alert('任务已触发运行');
+        } else {
+          alert('运行失败');
+        }
+      } catch (err) {
+        alert('运行失败：' + err.message);
+      }
+    };
+
+    window.deleteTask = async (jobId) => {
+      if (!confirm('确定要删除此任务吗？此操作不可恢复！')) return;
+      try {
+        const res = await fetch('/api/cron/delete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ jobId })
+        });
+        if (res.ok) {
+          await loadTasks();
+          alert('删除成功');
+        } else {
+          alert('删除失败');
+        }
+      } catch (err) {
+        alert('删除失败：' + err.message);
+      }
     };
 
     loadTasks();
