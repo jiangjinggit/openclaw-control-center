@@ -345,7 +345,7 @@
       if (!currentAgent) return;
 
       messages = [];
-      renderMessages();
+      renderMessages(false); // 选择 agent 时不自动滚动
       renderAgentList();
       document.getElementById('chatTitle').textContent = `与 ${currentAgent.name} 对话`;
       document.getElementById('sendBtn').disabled = false;
@@ -353,12 +353,15 @@
       document.getElementById('inputBox').focus();
     }
 
-    function renderMessages() {
+    function renderMessages(shouldScroll = true) {
       const container = document.getElementById('messages');
       if (messages.length === 0) {
         container.innerHTML = '<div class="empty-state"><div class="empty-icon">💬</div><div>开始与 Agent 对话</div></div>';
         return;
       }
+
+      // 检查用户是否在查看历史消息（不在底部）
+      const wasAtBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 50;
 
       container.innerHTML = messages.map(m => `
         <div class="message ${m.role}">
@@ -383,7 +386,12 @@
         `;
       }
 
-      container.scrollTop = container.scrollHeight;
+      // 只在以下情况自动滚动到底部：
+      // 1. shouldScroll 参数为 true（发送新消息时）
+      // 2. 用户之前就在底部（wasAtBottom）
+      if (shouldScroll && wasAtBottom) {
+        container.scrollTop = container.scrollHeight;
+      }
     }
 
     async function sendMessage() {
@@ -401,7 +409,7 @@
       input.value = '';
       input.style.height = 'auto';
       isLoading = true;
-      renderMessages();
+      renderMessages(true); // 发送消息时自动滚动到底部
 
       try {
         // 调用真实的消息发送 API
@@ -417,9 +425,27 @@
         const data = await res.json();
         
         if (data.ok) {
+          // 过滤掉系统元数据标记
+          let cleanContent = data.response || '(无响应)';
+          
+          // 移除常见的系统提示词标记
+          const systemMarkers = [
+            /Skills store policy \(operator configured\):[\s\S]*?(?=\n\n|$)/g,
+            /Conversation info \(untrusted metadata\):[\s\S]*?(?=\n\n|$)/g,
+            /Sender \(untrusted metadata\):[\s\S]*?(?=\n\n|$)/g,
+            /```json\s*\{[\s\S]*?"schema":\s*"openclaw\.[\s\S]*?\}\s*```/g,
+          ];
+          
+          systemMarkers.forEach(marker => {
+            cleanContent = cleanContent.replace(marker, '');
+          });
+          
+          // 清理多余的空行
+          cleanContent = cleanContent.replace(/\n{3,}/g, '\n\n').trim();
+          
           const assistantMessage = {
             role: 'assistant',
-            content: data.response || '(无响应)',
+            content: cleanContent,
             timestamp: Date.now()
           };
           messages.push(assistantMessage);
@@ -435,7 +461,7 @@
         });
       } finally {
         isLoading = false;
-        renderMessages();
+        renderMessages(true); // 收到回复时自动滚动到底部
       }
     }
 
@@ -450,7 +476,7 @@
     document.getElementById('newChatBtn').onclick = () => {
       if (currentAgent) {
         messages = [];
-        renderMessages();
+        renderMessages(false); // 新对话时不自动滚动
       }
     };
 
